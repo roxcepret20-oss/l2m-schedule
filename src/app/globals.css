@@ -1,41 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+  --main-bg: #F7F8FA;
+  --card-bg: #FFFFFF;
+  --navbar-bg: #FFFFFF;
+  --text: #111827;
+  --muted: #6B7280;
+  --accent: #4F46E5;
+  --shadow-1: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 20px 40px rgba(16,24,40,0.08);
+  --border: #E5E7EB;
+  --footer-border: #E5E7EB;
+}
+
+html,body {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--main-bg);
+  margin: 0;
+  padding: 0;
+}
+
 .page-container {
   max-width: 1200px;
-  margin: auto;
-  padding: 24px; 
-  background-color: #F7F8FA;
+  margin: 48px auto;
+  padding: 28px;
+  border-radius: 12px;
 }
-
 .navbar {
-  height: 64px;
-  background-color: white;
-  border-bottom: 1px solid #E5E7EB;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-
-  display: flex;
-  align-items: center;
-  gap: 28px;
+  height: 56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 0 20px;
+  background-color: var(--navbar-bg);
+  box-shadow: var(--shadow-lg);
 }
-
+.logo { font-weight:700; color:var(--text); font-size:18px; }
+.nav-items { display:flex; gap:20px; align-items:center; }
 .navbar-menu {
-  font-size: 14px;
-  font-weight: 500;
-  color: #6B7280;
+  color:var(--muted);
+  padding: 6px 4px;
+  font-weight:600;
+  position:relative;
+  text-decoration: none;
+  display: inline-block;
 }
-
-.navbar-menu:hover {
-  color: #111827;
-  font-weight: 600;
+.navbar-menu.active, .navbar-menu:hover {
+  color:var(--text);
 }
-
-.navbar-menu .active {
-  height: 2px;
-  color: #4F46E5;
-}
-
-.logo {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
+.navbar-menu.active::after {
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:-6px;
+  height:3px;
+  width:40%;
+  background:var(--accent);
+  border-radius:4px;
 }
 
 .page-title {
@@ -43,53 +65,93 @@
   margin-bottom: 24px;
   font-size: 24px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
+  text-align: center;
 }
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
-
 .card-container {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: 18px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  transition: 0.2s ease;
+  box-shadow: var(--shadow-1);
+  transform: translateX(0);
+  transition: transform 0.35s ease, opacity 0.35s ease;
 }
-
+.slide-out {
+  transform: translateX(-120%);
+  opacity: 0;
+}
 .card-container:hover {
   transform: translateY(-3px);
 }
-
 .card-boss-name {
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
+  margin-bottom: 4px;
 }
-
 .card-detail {
   font-size: 14px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--muted);
+  border-bottom: var(--border) 1px solid;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
 }
-
 .card-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: #4F46E5;
+  color: var(--accent);
 }
-
+.timer-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent); /* makes SVG use same color via currentColor */
+  flex: 0 0 auto;
+}
 .footer {
   height: 80px;
   font-size: 13px;
-  color: #9CA3AF;
-
+  color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
+  border-top: 1px solid var(--footer-border);
+}
 
-  border-top: 1px solid #E5E7EB;
+@media (prefers-color-scheme: dark) {
+  :root, [data-theme="dark"] {
+    --main-bg: #0b1220;
+    --card-bg: #0f1724;
+    --navbar-bg: rgba(255,255,255,0.02);
+    --text: #E6EEF8;
+    --muted: #9AA6B2;
+    --accent: #7C5CFF;
+    --shadow-1: 0 8px 24px rgba(2,6,23,0.6);
+    --shadow-lg: 0 30px 60px rgba(2,6,23,0.6);
+    --border: rgba(255,255,255,0.06);
+    --footer-border: rgba(255,255,255,0.04);
+  }
+}
+
+/* Optional: explicit class toggle */
+html[data-theme="dark"] {
+  --main-bg: #0b1220;
+  --card-bg: #0f1724;
+  --navbar-bg: rgba(255,255,255,0.02);
+  --text: #E6EEF8;
+  --muted: #9AA6B2;
+  --accent: #7C5CFF;
+  --shadow-1: 0 8px 24px rgba(2,6,23,0.6);
+  --shadow-lg: 0 30px 60px rgba(2,6,23,0.6);
+  --border: rgba(255,255,255,0.06);
+  --footer-border: rgba(255,255,255,0.04);
 }

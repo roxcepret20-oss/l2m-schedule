@@ -1,9 +1,13 @@
-"use client";
+import BossContainer from "./components/BossContainer";
+import { fetchBossContents } from "@/services/boss.service";
 
-import { useEffect, useState } from "react";
+export default async function Bosses() {
+  const bosses = await fetchBossContents();
 
-export default function Bosses() {
   return (
-    <div></div>
+    <div>
+      <div className="page-title">Boss Spawn Dashboard</div>
+      <BossContainer bosses={bosses} />
+    </div>
   );
 }
