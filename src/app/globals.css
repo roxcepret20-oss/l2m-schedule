@@ -1,0 +1,95 @@
+.page-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px; 
+  background-color: #F7F8FA;
+}
+
+.navbar {
+  height: 64px;
+  background-color: white;
+  border-bottom: 1px solid #E5E7EB;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.navbar-menu {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+}
+
+.navbar-menu:hover {
+  color: #111827;
+  font-weight: 600;
+}
+
+.navbar-menu .active {
+  height: 2px;
+  color: #4F46E5;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.page-title {
+  margin-top: 32px;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.card-container {
+  background-color: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: 0.2s ease;
+}
+
+.card-container:hover {
+  transform: translateY(-3px);
+}
+
+.card-boss-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-detail {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.card-timer {
+  font-size: 15px;
+  font-weight: 600;
+  color: #4F46E5;
+}
+
+.footer {
+  height: 80px;
+  font-size: 13px;
+  color: #9CA3AF;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-top: 1px solid #E5E7EB;
+}
