@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import styles from "./BossCard.module.css";
+import { ffaBossList, blueBossList } from "../../Helper/BossVariables";
+import bossVoice from "../../Helper/BossVoice";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -32,12 +35,21 @@ function formatCountdown(ms) {
 
 export default function BossCard({ boss }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn));
+
   const [now, setNow] = useState(() => Date.now());
 
-  const [isSliding, setIsSliding] = useState(false);
-  const [isGone, setIsGone] = useState(false);
-  const slideTimeoutRef = useRef(null);
-  const removeTimeoutRef = useRef(null);
+  const played5Ref = useRef(false);
+  const played1Ref = useRef(false);
+  const playedNowRef = useRef(false);
+
+  const target = spawnDateRef.current;
+  const remaining = target ? target.getTime() - now : null;
+  const timerText = remaining == null ? "—" : formatCountdown(remaining);
+  const spawnTimeLabel = target
+    ? target.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "Unknown";
+
+  
   useEffect(() => {
     // update target if boss.spawn prop changes
     spawnDateRef.current = parseSpawnToDate(boss.spawn);
@@ -48,55 +60,38 @@ export default function BossCard({ boss }) {
     return () => clearInterval(t);
   }, []);
 
-  const target = spawnDateRef.current;
-  const remaining = target ? target.getTime() - now : null;
-  const timerText = remaining == null ? "—" : formatCountdown(remaining);
-  const spawnTimeLabel = target
-    ? target.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "Unknown";
-
-   // schedule slide-out 60s after countdown reaches zero
   useEffect(() => {
-    const SLIDE_TRIGGER_MS = 0 * 60 * 1000; // 10 minutes in ms
-    // clear previous timers if spawn changed / moved into future
-    function clearTimers() {
-      if (slideTimeoutRef.current) {
-        clearTimeout(slideTimeoutRef.current);
-        slideTimeoutRef.current = null;
-      }
-      if (removeTimeoutRef.current) {
-        clearTimeout(removeTimeoutRef.current);
-        removeTimeoutRef.current = null;
-      }
+    bossVoice.init(); // safe client-only initialization
+  }, []);
+
+  useEffect(() => {
+    if (remaining == null) return;
+    if (remaining <= 5*60*1000 && !played5Ref.current && remaining > 1*60*1000) {
+      played5Ref.current = true;
+      bossVoice.speak(boss.name, 5);
     }
-
-    if (remaining != null && remaining <= SLIDE_TRIGGER_MS) {
-      // already scheduled or sliding? do nothing
-      if (!slideTimeoutRef.current && !isSliding && !isGone) {
-        slideTimeoutRef.current = setTimeout(() => {
-          setIsSliding(true);
-          // remove element after animation (match css transition ~450ms)
-          removeTimeoutRef.current = setTimeout(() => {
-            setIsGone(true);
-          }, 500);
-        }, 60 * 1000); // 1 minute after hit zero
-      }
-    } else {
-      // countdown moved into future or target missing -> cancel slide/removal
-      clearTimers();
-      setIsSliding(false);
-      setIsGone(false);
+    if (remaining <= 1*60*1000 && !played1Ref.current && remaining > 0) {
+      played1Ref.current = true;
+      bossVoice.speak(boss.name, 1);
     }
+    if (remaining <= 0 && !playedNowRef.current) {
+      playedNowRef.current = true;
+      bossVoice.speak(boss.name, 0);
+    }
+  }, [remaining, boss.name]);
 
-    return () => clearTimers();
-  }, [remaining, isSliding, isGone, boss.spawn]);
-
-  if (isGone) return null;
+  function cardStyleForBossType() {
+    if (ffaBossList.includes(boss.name)) {
+      return styles.boss_ffa;
+    } else if (blueBossList.includes(boss.name)) {
+      return styles.boss_blue;
+    }
+  }
 
   return (
-    <div className={`card-container${isSliding ? " slide-out" : ""}`} aria-live="polite">
+    <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
      <div className="card-boss-name">{boss.name}</div>
-      <div className="card-detail">Spawn: {boss.spawn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      <div className="card-detail">Spawn: {spawnTimeLabel}</div>
       <div className="card-timer">
         <svg className="timer-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

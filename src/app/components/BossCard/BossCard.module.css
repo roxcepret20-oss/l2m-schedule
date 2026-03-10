@@ -1,0 +1,9 @@
+.boss_ffa {
+  background-color: var(--ffa-bg);
+  border: 1px solid var(--ffa-border);
+} 
+
+.boss_blue {
+  background-color: var(--blue-bg);
+  border: 1px solid var(--blue-border);
+} 
