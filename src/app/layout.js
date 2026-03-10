@@ -1,6 +1,7 @@
 import Navbar from "./components/Navbar";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html>
+    <html suppressHydrationWarning>
+      <head>
+<       script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{const saved=localStorage.getItem("theme");const theme=saved||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",theme);}catch(e){}})();`,
+        }}
+      />
+      </head>
+      
       <body className="page-container">
         <Navbar />
         {children}

@@ -13,7 +13,6 @@ export default function Bosses() {
       .then(res => res.json())
       .then(data => { if (mounted) setBosses(data); })
       .catch(()=>{});
-    console.log("bosses", bosses);
     return () => { mounted = false; };
   }, []);
 
