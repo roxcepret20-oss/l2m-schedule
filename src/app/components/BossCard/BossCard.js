@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./BossCard.module.css";
 import { ffaBossList, blueBossList } from "../../Helper/BossVariables";
 import bossVoice from "../../Helper/BossVoice";
-
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
   if (spawn instanceof Date) return spawn;
@@ -34,7 +33,7 @@ function formatCountdown(ms) {
 }
 
 export default function BossCard({ boss }) {
-  const spawnDateRef = useRef(parseSpawnToDate(boss.spawn));
+  const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
 
@@ -45,15 +44,11 @@ export default function BossCard({ boss }) {
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
   const timerText = remaining == null ? "—" : formatCountdown(remaining);
-  const spawnTimeLabel = target
-    ? target.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "Unknown";
-
   
   useEffect(() => {
-    // update target if boss.spawn prop changes
-    spawnDateRef.current = parseSpawnToDate(boss.spawn);
-  }, [boss.spawn]);
+    // update target if boss.spawn_time prop changes
+    spawnDateRef.current = parseSpawnToDate(boss.spawn_time);
+  }, [boss.spawn_time]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -91,7 +86,7 @@ export default function BossCard({ boss }) {
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
      <div className="card-boss-name">{boss.name}</div>
-      <div className="card-detail">Spawn: {spawnTimeLabel}</div>
+      <div className="card-detail">Spawn: {boss.spawn_time}</div>
       <div className="card-timer">
         <svg className="timer-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

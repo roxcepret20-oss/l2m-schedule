@@ -1,11 +1,8 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "@/lib/supabase";
-import BossParser from "./BossParserHelper";
-
-const parser = new BossParser();
 
 export async function fetchBossContents() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/boss_schedule?select=content`,
+    `${SUPABASE_URL}/rest/v1/bosses?select=*`,
     {
       method: "GET",
       headers: {
@@ -23,6 +20,5 @@ export async function fetchBossContents() {
   }
 
   const rows = await res.json();
-  const rawContent = (rows && rows[0] && rows[0].content) || "";
-  return parser.parseBossContent(rawContent);
+  return rows || [];
 }
