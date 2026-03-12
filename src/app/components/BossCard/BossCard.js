@@ -76,7 +76,9 @@ export default function BossCard({ boss }) {
   }, [remaining, boss.name]);
 
   function cardStyleForBossType() {
-    if (ffaBossList.includes(boss.name)) {
+    if (boss.type === "invasion") {
+      return styles.boss_invasion;
+    } else if (ffaBossList.includes(boss.name)) {
       return styles.boss_ffa;
     } else if (blueBossList.includes(boss.name)) {
       return styles.boss_blue;

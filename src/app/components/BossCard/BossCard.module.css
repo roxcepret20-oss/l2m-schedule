@@ -7,3 +7,8 @@
   background-color: var(--blue-bg);
   border: 1px solid var(--blue-border);
 } 
+
+.boss_invasion {
+  background-color: var(--invasion-bg);
+  border: 1px solid var(--invasion-border);
+} 
