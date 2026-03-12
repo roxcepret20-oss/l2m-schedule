@@ -8,8 +8,7 @@ export default function Navbar() {
   const pathname = usePathname() || "/";
   const links = [
     { href: "/", label: "All Bosses" },
-    { href: "/ffa-bosses", label: "FFA Bosses" },
-    { href: "/inputs", label: "Inputs" },
+    { href: "/ffa-bosses", label: "FFA Bosses" }
   ];
 
   return (

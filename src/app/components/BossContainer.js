@@ -20,7 +20,6 @@ function computeSpawnTime(kill_time, interval) {
   const hrs = Number(interval);
   if (!isFinite(hrs) || hrs <= 0) return d.toISOString();
   d.setHours(d.getHours() + hrs);
-  while (d.getTime() <= now.getTime()) d.setHours(d.getHours() + hrs);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${hh}:${mm}`;
@@ -45,7 +44,10 @@ function withSpawnSorted(list) {
       return b.type !== "invasion";
     })
     .map(b => ({ ...b, spawn_time: computeSpawnTime(b.kill_time, b.interval) }))
-    .sort((a, b) => spawnTimeToMs(a.spawn_time) - spawnTimeToMs(b.spawn_time));
+    .sort((a, b) => {
+      const now = Date.now();
+      return Math.abs(spawnTimeToMs(a.spawn_time) - now) - Math.abs(spawnTimeToMs(b.spawn_time) - now);
+    });
 }
 
 export default function BossContainer({ bosses = [] }) {
@@ -90,7 +92,20 @@ export default function BossContainer({ bosses = [] }) {
             layout
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -120, height: 0, margin: 0, padding: 0 }}
+            exit={{
+              opacity: 0,
+              x: -120,
+              height: 0,
+              margin: 0,
+              padding: 0,
+              transition: {
+                x: { duration: 0.35 },
+                opacity: { duration: 0.35 },
+                height: { duration: 0.2, delay: 0.3 },
+                margin: { duration: 0.2, delay: 0.3 },
+                padding: { duration: 0.2, delay: 0.3 },
+              },
+            }}
             transition={{ duration: 0.35 }}
           >
              <BossCard key={index} boss={boss} />

@@ -45,7 +45,7 @@ html,body {
   box-shadow: var(--shadow-lg);
 }
 .logo { font-weight:700; color:var(--text); font-size:18px; }
-.nav-items { display:flex; gap:20px; align-items:center; }
+.nav-items { display:flex; gap:20px; align-items:center; margin-left:auto; }
 .navbar-menu {
   color:var(--muted);
   padding: 6px 4px;
