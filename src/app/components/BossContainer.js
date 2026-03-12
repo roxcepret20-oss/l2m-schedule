@@ -70,7 +70,7 @@ export default function BossContainer({ bosses = [] }) {
   // every tick, clear spawn if it's older than 1 minute
   useEffect(() => {
     setVisibleBosses(prev => {
-      const cutoff = now - 1 * 60 * 1000; // 1 minute ago
+      const cutoff = now; // 1 minute ago
       return prev.filter(b => {
         if (!b.spawn_time) return true;
         const [hh, mm] = b.spawn_time.split(":").map(Number);
@@ -81,7 +81,7 @@ export default function BossContainer({ bosses = [] }) {
         if (isNaN(ms)) return true;
         // keep if not expired, OR if the difference is more than 30 min
         // (large gap = spawn is actually tomorrow, not truly expired)
-        return ms >= cutoff || (cutoff - ms) > 30 * 60 * 1000;
+        return ms > cutoff || (cutoff - ms) > 30 * 60 * 1000;
       });
     });
   }, [now]);
