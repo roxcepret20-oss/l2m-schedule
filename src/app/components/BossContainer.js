@@ -59,7 +59,7 @@ export default function BossContainer({ bosses = [] }) {
   // keep local copy in sync when prop changes
   useEffect(() => {
     setVisibleBosses(withSpawnSorted(bosses));
-
+    console.log("Bosses updated:", visibleBosses);
   }, [bosses]);
 
   useEffect(() => {
@@ -77,8 +77,11 @@ export default function BossContainer({ bosses = [] }) {
         const d = new Date();
         d.setHours(hh, mm, 0, 0);
         const ms = d.getTime();
+        
         if (isNaN(ms)) return true;
-        return ms >= cutoff; // keep if not expired
+        // keep if not expired, OR if the difference is more than 30 min
+        // (large gap = spawn is actually tomorrow, not truly expired)
+        return ms >= cutoff || (cutoff - ms) > 30 * 60 * 1000;
       });
     });
   }, [now]);
