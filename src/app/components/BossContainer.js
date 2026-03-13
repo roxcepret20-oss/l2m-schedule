@@ -62,7 +62,7 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
   }, [bosses]);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60 * 1000);
+    const t = setInterval(() => setNow(Date.now()), 5 * 1000);
     return () => clearInterval(t);
   }, []);
 
