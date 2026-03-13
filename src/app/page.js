@@ -16,7 +16,17 @@ const TIMEZONES = [
 
 export default function Bosses() {
   const [bosses, setBosses] = useState(null);
-  const [tzKey, setTzKey] = useState("WIB");
+  const [tzKey, setTzKey] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("tzKey") || "WIB";
+    }
+    return "WIB";
+  });
+
+  function handleTzChange(key) {
+    setTzKey(key);
+    localStorage.setItem("tzKey", key);
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -42,7 +52,7 @@ export default function Bosses() {
           id="tz-select"
           className="tz-select"
           value={tzKey}
-          onChange={e => setTzKey(e.target.value)}
+          onChange={e => handleTzChange(e.target.value)}
         >
           {TIMEZONES.map(tz => (
             <option key={tz.key} value={tz.key}>{tz.label}</option>
