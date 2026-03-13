@@ -14,7 +14,9 @@ function parseSpawnToDate(spawn) {
     const now = new Date();
     const d = new Date(now);
     d.setHours(parseInt(hhmm[1], 10), parseInt(hhmm[2], 10), 0, 0);
-    if (d <= now) d.setDate(d.getDate() + 1);
+    // Only bump to tomorrow if the time is actually a "tomorrow" time (>5min in the past).
+    // If it's 0–5min past, it just expired → let remaining go negative.
+    if (now.getTime() - d.getTime() > 5 * 60 * 1000) d.setDate(d.getDate() + 1);
     return d;
   }
   return null;
@@ -31,15 +33,18 @@ function offsetSpawnTime(spawn_time, offset) {
 }
 
 function formatCountdown(ms) {
-  if (ms <= 0) return "0s";
-  const totalSec = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSec / 3600);
-  const minutes = Math.floor((totalSec % 3600) / 60);
-  const seconds = totalSec % 60;
-  const s = `${String(seconds).padStart(2, "0")}s`;
-  const m = `${String(minutes).padStart(2, "0")}m`;
-  if (hours > 0) return `${hours}h ${m} ${s}`;
-  return `${minutes}m ${s}`;
+  if (ms > 0) {
+    const totalSec = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    const s = `${String(seconds).padStart(2, "0")}s`;
+    const m = `${String(minutes).padStart(2, "0")}m`;
+    if (hours > 0) return `${hours}h ${m} ${s}`;
+    return `${minutes}m ${s}`;
+  }
+  // expired: count up negatively until BossContainer removes the card (~60s)
+  return `-${Math.abs(Math.ceil(ms / 1000))}s`;
 }
 
 export default function BossCard({ boss, tzOffset = 0 }) {

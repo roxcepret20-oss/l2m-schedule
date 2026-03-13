@@ -90,7 +90,7 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
       <AnimatePresence>
         {visibleBosses.map((boss, index) => (
           <motion.div
-            key={boss.name+boss.type+index}
+            key={boss.name + boss.type}
             layout
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -108,9 +108,9 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
                 padding: { duration: 0.2, delay: 0.3 },
               },
             }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.35, layout: { duration: 0.4, ease: "easeOut" } }}
           >
-             <BossCard key={index} boss={boss} tzOffset={tzOffset} />
+             <BossCard boss={boss} tzOffset={tzOffset} />
           </motion.div>
         ))}
       </AnimatePresence>
