@@ -1,5 +1,6 @@
 import Navbar from "./components/Navbar";
 import Footer from "./components/footer";
+import PinGate from "./components/PinGate";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
@@ -31,9 +32,11 @@ export default function RootLayout({ children }) {
       </head>
       
       <body className="page-container">
-        <Navbar />
-        {children}
-        <Footer />
+        <PinGate>
+          <Navbar />
+          {children}
+          <Footer />
+        </PinGate>
       </body>
     </html>
   );

@@ -165,6 +165,78 @@ html,body {
   }
 }
 
+/* Pin gate */
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--main-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.pin-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 40px 36px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  width: 100%;
+  max-width: 340px;
+}
+.pin-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.pin-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pin-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 8px;
+  background: var(--main-bg);
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+}
+.pin-input:focus {
+  border-color: var(--accent);
+}
+.pin-error {
+  font-size: 13px;
+  color: #ef4444;
+  margin: 0;
+}
+.pin-btn {
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.pin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (prefers-color-scheme: dark) {
   :root, [data-theme="dark"] {
     --main-bg: #0b1220;
