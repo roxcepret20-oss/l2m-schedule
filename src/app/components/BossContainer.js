@@ -50,7 +50,7 @@ function withSpawnSorted(list) {
     });
 }
 
-export default function BossContainer({ bosses = [] }) {
+export default function BossContainer({ bosses = [], tzOffset = 0 }) {
   const [now, setNow] = useState(() => Date.now());
 
   // local copy of bosses so we can update spawn values (e.g. clear expired)
@@ -110,7 +110,7 @@ export default function BossContainer({ bosses = [] }) {
             }}
             transition={{ duration: 0.35 }}
           >
-             <BossCard key={index} boss={boss} />
+             <BossCard key={index} boss={boss} tzOffset={tzOffset} />
           </motion.div>
         ))}
       </AnimatePresence>
