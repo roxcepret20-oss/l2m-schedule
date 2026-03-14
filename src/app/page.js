@@ -30,11 +30,15 @@ export default function Bosses() {
 
   useEffect(() => {
     let mounted = true;
-    fetch("/api/bosses")
-      .then(res => res.json())
-      .then(data => { if (mounted) setBosses(data); })
-      .catch(()=>{});
-    return () => { mounted = false; };
+    const fetchBosses = () => {
+      fetch("/api/bosses")
+        .then(res => res.json())
+        .then(data => { if (mounted) setBosses(data); })
+        .catch(() => {});
+    };
+    fetchBosses();
+    const interval = setInterval(fetchBosses, 10 * 60 * 1000);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   if (!bosses) return (
