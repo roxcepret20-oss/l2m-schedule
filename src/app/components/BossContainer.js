@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import BossCard from "./BossCard/BossCard";
 import { motion, AnimatePresence } from "framer-motion";
 
-function computeSpawnTime(kill_time, interval) {
+function computeSpawnTime(kill_time, interval, tzOffset = 0) {
   if (!kill_time) return null;
   const now = new Date();
   const hhmm = String(kill_time).match(/^(\d{1,2}):(\d{2})$/);
@@ -19,7 +19,7 @@ function computeSpawnTime(kill_time, interval) {
   if (!d) return null;
   const hrs = Number(interval);
   if (!isFinite(hrs) || hrs <= 0) return d.toISOString();
-  d.setHours(d.getHours() + hrs);
+  d.setHours(d.getHours() + hrs + tzOffset);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${hh}:${mm}`;
@@ -35,7 +35,7 @@ function spawnTimeToMs(spawn_time) {
   return d.getTime();
 }
 
-function withSpawnSorted(list) {
+function withSpawnSorted(list, tzOffset = 0) {
   return list
     .filter(b => {
       const day = new Date().getDay(); 
@@ -43,7 +43,7 @@ function withSpawnSorted(list) {
       if (invasionDays.includes(day)) return true; 
       return b.type !== "invasion";
     })
-    .map(b => ({ ...b, spawn_time: computeSpawnTime(b.kill_time, b.interval) }))
+    .map(b => ({ ...b, spawn_time: computeSpawnTime(b.kill_time, b.interval, tzOffset) }))
     .sort((a, b) => {
       const now = Date.now();
       return Math.abs(spawnTimeToMs(a.spawn_time) - now) - Math.abs(spawnTimeToMs(b.spawn_time) - now);
@@ -54,12 +54,12 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
   const [now, setNow] = useState(() => Date.now());
 
   // local copy of bosses so we can update spawn values (e.g. clear expired)
-  const [visibleBosses, setVisibleBosses] = useState(() => withSpawnSorted(bosses));
+  const [visibleBosses, setVisibleBosses] = useState(() => withSpawnSorted(bosses, tzOffset));
 
-  // keep local copy in sync when prop changes
+  // keep local copy in sync when prop or timezone changes
   useEffect(() => {
-    setVisibleBosses(withSpawnSorted(bosses));
-  }, [bosses]);
+    setVisibleBosses(withSpawnSorted(bosses, tzOffset));
+  }, [bosses, tzOffset]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5 * 1000);
@@ -110,7 +110,7 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
             }}
             transition={{ duration: 0.35, layout: { duration: 0.4, ease: "easeOut" } }}
           >
-             <BossCard boss={boss} tzOffset={tzOffset} />
+             <BossCard boss={boss} />
           </motion.div>
         ))}
       </AnimatePresence>

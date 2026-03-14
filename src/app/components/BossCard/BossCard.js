@@ -22,16 +22,6 @@ function parseSpawnToDate(spawn) {
   return null;
 }
 
-function offsetSpawnTime(spawn_time, offset) {
-  if (!spawn_time || !offset) return spawn_time;
-  const match = String(spawn_time).match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return spawn_time;
-  let hh = parseInt(match[1], 10) + offset;
-  const mm = parseInt(match[2], 10);
-  hh = ((hh % 24) + 24) % 24;
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-}
-
 function formatCountdown(ms) {
   if (ms > 0) {
     const totalSec = Math.floor(ms / 1000);
@@ -47,7 +37,7 @@ function formatCountdown(ms) {
   return `-${Math.abs(Math.ceil(ms / 1000))}s`;
 }
 
-export default function BossCard({ boss, tzOffset = 0 }) {
+export default function BossCard({ boss }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
@@ -104,7 +94,7 @@ export default function BossCard({ boss, tzOffset = 0 }) {
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
      <div className="card-boss-name">{boss.name}</div>
       <div className="card-detail">
-        Spawn: {offsetSpawnTime(boss.spawn_time, tzOffset)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
+        Spawn: {boss.spawn_time ?? "—"} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
       </div>
       <div className="card-timer">
         <svg className="timer-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
