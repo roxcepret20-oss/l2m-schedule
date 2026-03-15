@@ -103,6 +103,9 @@ export default function BossCard({ boss }) {
         </svg>
          {timerText}
       </div>
+      {boss.updated_by && (
+        <div className="card-meta">Updated by: {boss.updated_by}</div>
+      )}
     </div>
   );
 }

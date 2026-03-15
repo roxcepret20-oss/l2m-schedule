@@ -159,6 +159,12 @@ html,body {
   color: var(--accent); /* makes SVG use same color via currentColor */
   flex: 0 0 auto;
 }
+.card-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  opacity: 0.75;
+}
 .footer {
   height: 80px;
   font-size: 13px;
