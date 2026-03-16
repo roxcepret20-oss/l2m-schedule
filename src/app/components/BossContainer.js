@@ -69,7 +69,7 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
   // every tick, clear spawn if it's older than 1 minute
   useEffect(() => {
     setVisibleBosses(prev => {
-      const cutoff = now - 60 * 1000; // 1 minute ago
+      const cutoff = now - 2 * 60 * 1000; // 1 minute ago
       return prev.filter(b => {
         if (!b.spawn_time) return true;
         const [hh, mm] = b.spawn_time.split(":").map(Number);
