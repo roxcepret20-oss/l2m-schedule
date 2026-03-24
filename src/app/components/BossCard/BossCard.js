@@ -49,6 +49,9 @@ export default function BossCard({ boss }) {
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
   const timerText = remaining == null ? "—" : formatCountdown(remaining);
+
+  const LATE_TOLERANCE_MS = 10000; // 10s max late
+  const isVisible = typeof document === "undefined" ? true : !document.hidden;
   
   useEffect(() => {
     // update target if boss.spawn_time prop changes
@@ -74,7 +77,12 @@ export default function BossCard({ boss }) {
       played1Ref.current = true;
       bossVoice.speak(boss.name, 1);
     }
-    if (remaining <= 0 && !playedNowRef.current) {
+    if (
+      remaining <= 0 &&
+      remaining > -LATE_TOLERANCE_MS &&
+      !playedNowRef.current &&
+      isVisible
+      ) {
       playedNowRef.current = true;
       bossVoice.speak(boss.name, 0);
     }
