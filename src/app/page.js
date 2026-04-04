@@ -37,7 +37,7 @@ export default function Bosses() {
         .catch(() => {});
     };
     fetchBosses();
-    const interval = setInterval(fetchBosses, 10 * 60 * 1000);
+    const interval = setInterval(fetchBosses, 2 * 60 * 60 * 1000);
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
