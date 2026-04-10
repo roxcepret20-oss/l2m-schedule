@@ -9,6 +9,7 @@ export async function fetchBossContents() {
         "Content-Type": "application/json",
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
+        "x-client": "web-dashboard",
       },
       cache: "no-store",
     }
