@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import styles from "./BossCard.module.css";
-import { ffaBossList, blueBossList } from "../../Helper/BossVariables";
 import bossVoice from "../../Helper/BossVoice";
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -91,9 +90,9 @@ export default function BossCard({ boss }) {
   function cardStyleForBossType() {
     if (boss.type === "invasion") {
       return styles.boss_invasion;
-    } else if (ffaBossList.includes(boss.name)) {
+    } else if (boss.category === "ffa") {
       return styles.boss_ffa;
-    } else if (blueBossList.includes(boss.name)) {
+    } else if (boss.category === "blue") {
       return styles.boss_blue;
     }
   }

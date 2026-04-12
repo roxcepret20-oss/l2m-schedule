@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import BossContainer from "../components/BossContainer";
 import Loader from "../components/ClientSideLoader";
-import { ffaBossList } from "../Helper/BossVariables";
 
 const TIMEZONES = [
   { key: "WIB",  label: "WIB — West Indonesia (UTC+7)",  offset: 0 },
@@ -13,6 +12,7 @@ const TIMEZONES = [
   { key: "TH",   label: "Thailand (UTC+7)",               offset: 0 },
   { key: "VN",   label: "Vietnam (UTC+7)",                offset: 0 },
   { key: "PHT",  label: "Philippines (UTC+8)",            offset: 1 },
+  { key: "MY",   label: "Malaysia (UTC+8)",               offset: 1 },
 ];
 
 export default function FFABosses() {
@@ -32,10 +32,10 @@ export default function FFABosses() {
   useEffect(() => {
     let mounted = true;
     const fetchBosses = () => {
-      fetch("/api/bosses")
+      fetch("/api/bosses?category=ffa")
         .then(res => res.json())
         .then(data => {
-          if (mounted) setBosses(data.filter(b => ffaBossList.includes(b.name)));
+          if (mounted) setBosses(data);
         })
         .catch(() => {});
     };

@@ -1,8 +1,10 @@
 import { fetchBossContents } from "@/services/boss.service";
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const bosses = await fetchBossContents();
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+    const bosses = await fetchBossContents(category);
     return new Response(JSON.stringify(bosses), { headers: { "Content-Type": "application/json" }});
   } catch (err) {
     console.error("API GET /bosses error", err);

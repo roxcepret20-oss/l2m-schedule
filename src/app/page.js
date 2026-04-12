@@ -12,6 +12,7 @@ const TIMEZONES = [
   { key: "TH",   label: "Thailand (UTC+7)",               offset: 0 },
   { key: "VN",   label: "Vietnam (UTC+7)",                offset: 0 },
   { key: "PHT",  label: "Philippines (UTC+8)",            offset: 1 },
+  { key: "MY",   label: "Malaysia (UTC+8)",               offset: 1 },
 ];
 
 export default function Bosses() {
