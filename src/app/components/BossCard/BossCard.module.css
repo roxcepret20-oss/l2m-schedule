@@ -11,4 +11,20 @@
 .boss_invasion {
   background-color: var(--invasion-bg);
   border: 1px solid var(--invasion-border);
+  position: relative;
+}
+
+.invasion_badge {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
 } 

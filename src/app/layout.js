@@ -1,9 +1,6 @@
-import Navbar from "./components/Navbar";
-import Footer from "./components/footer";
-import PinGate from "./components/PinGate";
+import LayoutShell from "./components/LayoutShell";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,11 +29,9 @@ export default function RootLayout({ children }) {
       </head>
       
       <body className="page-container">
-        <PinGate>
-          <Navbar />
+        <LayoutShell>
           {children}
-          <Footer />
-        </PinGate>
+        </LayoutShell>
       </body>
     </html>
   );

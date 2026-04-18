@@ -99,6 +99,9 @@ export default function BossCard({ boss }) {
 
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
+      {boss.type === "invasion" && (
+        <span className={styles.invasion_badge}>Invasion</span>
+      )}
      <div className="card-boss-name">{boss.name}</div>
       <div className="card-detail">
         Spawn: {boss.spawn_time ?? "—"} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
