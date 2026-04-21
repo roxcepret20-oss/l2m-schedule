@@ -28,6 +28,12 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 640px) {
+  .sidebar {
+    width: 60px;
+  }
+}
+
 .sidebarLogo {
   display: flex;
   align-items: center;
@@ -35,6 +41,13 @@
   padding: 0 20px 24px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .sidebarLogo {
+    padding: 0 14px 24px;
+    justify-content: center;
+  }
 }
 
 .logoIcon {
@@ -81,7 +94,7 @@
   color: var(--text);
 }
 
-.navItemActive {
+.navItem.navItemActive {
   background: var(--main-bg);
   color: var(--accent);
   font-weight: 600;
@@ -91,6 +104,123 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+
+.navLabel {
+  /* visible by default on large screens */
+}
+
+@media (max-width: 640px) {
+  .navLabel {
+    display: none;
+  }
+  .logoText {
+    display: none;
+  }
+}
+
+.navGroup {
+  position: relative;
+}
+
+.navGroupBtn {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.navChevron {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  transition: transform 0.2s;
+  color: var(--muted);
+}
+
+.navChevronOpen {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+  .navChevron {
+    display: none;
+  }
+}
+
+/* ── Large screen: inline dropdown ── */
+.navFlyout {
+  position: static;
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  min-width: unset;
+  padding: 2px 0 4px 0;
+}
+
+.navFlyoutTitle {
+  display: none;
+}
+
+.navFlyoutItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px 8px 44px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navFlyoutItem:hover {
+  background: var(--main-bg);
+  color: var(--text);
+}
+
+.navFlyoutItem.navFlyoutItemActive {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--main-bg);
+}
+
+/* ── Small screen: flyout to the right ── */
+@media (max-width: 640px) {
+  .navFlyout {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    min-width: 190px;
+    padding: 6px;
+    z-index: 200;
+  }
+
+  .navFlyoutTitle {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding: 6px 10px 4px;
+    margin: 0;
+  }
+
+  .navFlyoutItem {
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--text);
+    background: none;
+  }
 }
 
 /* ── Top bar ── */

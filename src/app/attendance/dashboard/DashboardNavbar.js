@@ -41,7 +41,7 @@ export function DashboardNavbar() {
     }
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
-    router.push("/login");
+    router.push("/attendance/login");
   }
 
   return (

@@ -27,7 +27,7 @@ export default function LoginPage() {
       if (res.ok && data.token) {
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("auth_user", username);
-        router.push("/dashboard");
+        router.push("/attendance/dashboard");
       } else {
         setError(data.message || "Invalid username or password.");
       }
