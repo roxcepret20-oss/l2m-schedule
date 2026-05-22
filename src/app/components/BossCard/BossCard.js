@@ -36,6 +36,12 @@ function formatCountdown(ms) {
   return `-${Math.abs(Math.ceil(ms / 1000))}s`;
 }
 
+function getPointsInfo(boss) {
+  if (boss.category === "ffa") return { points: 5, label: "ffa" };
+  if (boss.category === "red") return { points: 3, label: "red" };
+  return null;
+}
+
 export default function BossCard({ boss }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
@@ -97,6 +103,8 @@ export default function BossCard({ boss }) {
     }
   }
 
+  const pointsInfo = getPointsInfo(boss);
+
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
       {boss.type === "invasion" && (
@@ -115,6 +123,11 @@ export default function BossCard({ boss }) {
       </div>
       {boss.updated_by && (
         <div className="card-meta">Updated by: {boss.updated_by}</div>
+      )}
+      {pointsInfo && (
+        <span className={`${styles.points_badge} ${styles[`pts_${pointsInfo.label}`]}`}>
+          {pointsInfo.points} pts
+        </span>
       )}
     </div>
   );

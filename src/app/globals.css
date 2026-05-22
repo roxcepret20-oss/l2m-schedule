@@ -120,9 +120,11 @@ html,body {
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: 18px;
+  padding-bottom: 24px;
   box-shadow: var(--shadow-1);
   transform: translateX(0);
   transition: transform 0.35s ease, opacity 0.35s ease;
+  position: relative;
 }
 .slide-out {
   transform: translateX(-120%);

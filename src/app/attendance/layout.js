@@ -12,9 +12,10 @@ export default function AttendanceLayout({ children }) {
   const [checked, setChecked] = useState(false);
 
   const isLogin = pathname === "/attendance/login";
+  const isPublicMemberDetail = /^\/attendance\/members\/[^/]+$/.test(pathname);
 
   useEffect(() => {
-    if (isLogin) {
+    if (isLogin || isPublicMemberDetail) {
       setChecked(true);
       return;
     }
@@ -24,11 +25,11 @@ export default function AttendanceLayout({ children }) {
     } else {
       setChecked(true);
     }
-  }, [router, isLogin]);
+  }, [router, isLogin, isPublicMemberDetail]);
 
   if (!checked) return null;
 
-  if (isLogin) return <>{children}</>;
+  if (isLogin || isPublicMemberDetail) return <>{children}</>;
 
   return (
     <div className={styles.wrapper}>

@@ -9,12 +9,13 @@ const MENU_ITEMS = [
   { href: "/attendance/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/attendance/dashboard/attendance", label: "Attendance", icon: "clipboard" },
   { href: "/attendance/clans", label: "Clan", icon: "shield" },
-  { href: "/attendance/dashboard/members", label: "Members", icon: "users" },
+  { href: "/attendance/members", label: "Members", icon: "users" },
   { href: "/attendance/dashboard/bosses", label: "Bosses", icon: "skull" },
 ];
 
 const SETTINGS_SUB_ITEMS = [
   { href: "/attendance/settings/gear_score_formula", label: "Gear Score Formula" },
+  { href: "/attendance/settings/admins", label: "Admins" },
 ];
 
 const ICONS = {
