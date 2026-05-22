@@ -108,7 +108,9 @@ export default function BossCard({ boss }) {
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
       {boss.type === "invasion" && (
-        <span className={styles.invasion_badge}>Invasion</span>
+        <span className={styles.invasion_badge} title="Invasion">
+          <img src="/invasion-icon.png" alt="Invasion" width={42} height={42} />
+        </span>
       )}
      <div className="card-boss-name">{boss.name}</div>
       <div className="card-detail">

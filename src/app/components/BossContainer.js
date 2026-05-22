@@ -35,6 +35,12 @@ function spawnTimeToMs(spawn_time) {
   return d.getTime();
 }
 
+function categoryPoints(boss) {
+  if (boss.category === "ffa") return 5;
+  if (boss.category === "red") return 3;
+  return 0;
+}
+
 function withSpawnSorted(list, tzOffset = 0) {
   return list
     .filter(b => {
@@ -46,7 +52,9 @@ function withSpawnSorted(list, tzOffset = 0) {
     .map(b => ({ ...b, spawn_time: computeSpawnTime(b.kill_time, b.interval, tzOffset) }))
     .sort((a, b) => {
       const now = Date.now();
-      return Math.abs(spawnTimeToMs(a.spawn_time) - now) - Math.abs(spawnTimeToMs(b.spawn_time) - now);
+      const timeDiff = Math.abs(spawnTimeToMs(a.spawn_time) - now) - Math.abs(spawnTimeToMs(b.spawn_time) - now);
+      if (timeDiff !== 0) return timeDiff;
+      return categoryPoints(b) - categoryPoints(a);
     });
 }
 
