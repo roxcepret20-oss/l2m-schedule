@@ -96,7 +96,7 @@ export default function BossCard({ boss }) {
   function cardStyleForBossType() {
     if (boss.type === "invasion") {
       return styles.boss_invasion;
-    } else if (boss.category === "ffa") {
+    } else if (boss.category === "ffa" || boss.name === "Queen Ant" || boss.name === "Core Susceptor") {
       return styles.boss_ffa;
     } else if (boss.category === "blue") {
       return styles.boss_blue;
@@ -124,7 +124,21 @@ export default function BossCard({ boss }) {
          {timerText}
       </div>
       {boss.updated_by && (
-        <div className="card-meta">Updated by: {boss.updated_by}</div>
+        <div className="card-meta">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            aria-label="Updated by"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}
+          >
+            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          {boss.updated_by}
+        </div>
       )}
       {pointsInfo && (
         <span className={`${styles.points_badge} ${styles[`pts_${pointsInfo.label}`]}`}>
