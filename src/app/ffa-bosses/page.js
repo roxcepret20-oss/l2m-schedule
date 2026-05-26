@@ -32,7 +32,7 @@ export default function FFABosses() {
   useEffect(() => {
     let mounted = true;
     const fetchBosses = () => {
-      fetch("/api/bosses?category=ffa")
+      fetch("/api/bosses?category=ffa&names=Queen Ant,Core Susceptor")
         .then(res => res.json())
         .then(data => {
           if (mounted) setBosses(data);
