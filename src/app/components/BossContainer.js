@@ -118,7 +118,7 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
             }}
             transition={{ duration: 0.35, layout: { duration: 0.4, ease: "easeOut" } }}
           >
-             <BossCard boss={boss} />
+             <BossCard boss={boss} tzOffset={tzOffset} />
           </motion.div>
         ))}
       </AnimatePresence>

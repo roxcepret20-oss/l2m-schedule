@@ -42,7 +42,27 @@ function getPointsInfo(boss) {
   return null;
 }
 
-export default function BossCard({ boss }) {
+// Returns 'both' | 'pokemon' | 'digimon' based on WIB (UTC+7) game server time at spawn
+function getClanType(spawnDate, tzOffset = 0, category, name) {
+  if (category === "ffa" || name === "Queen Ant" || name === "Core Susceptor") return "both";
+  if (!spawnDate) return "both";
+  // spawnDate is a JS Date whose HH:mm was set in display TZ (WIB + tzOffset).
+  // Convert to true WIB: undo machine offset → UTC → WIB, then subtract display tzOffset.
+  const wibMs = spawnDate.getTime()
+    + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
+    - tzOffset * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const day = wibDate.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  const hour = wibDate.getHours();
+  // Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
+  if ([1, 3, 5].includes(day)) return "both";
+  // Non-invasion days
+  if (hour < 8) return "both";
+  if (hour < 16) return "pokemon";
+  return "digimon";
+}
+
+export default function BossCard({ boss, tzOffset = 0 }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
@@ -112,6 +132,25 @@ export default function BossCard({ boss }) {
           <img src="/invasion-icon.png" alt="Invasion" width={42} height={42} />
         </span>
       )}
+      {boss.type !== "invasion" && (() => {
+        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name);
+        return (
+          <span className={styles.world_badge}>
+            {clan === "both" && (
+              <>
+                <img src="/digimon_icon.png" alt="Digimon" width={28} height={28} className={styles.icon_digimon} />
+                <img src="/pokemon_icon.png" alt="Pokemon" width={28} height={28} className={styles.icon_pokemon} />
+              </>
+            )}
+            {clan === "digimon" && (
+              <img src="/digimon_icon.png" alt="Digimon" width={28} height={28} className={styles.icon_digimon} />
+            )}
+            {clan === "pokemon" && (
+              <img src="/pokemon_icon.png" alt="Pokemon" width={28} height={28} className={styles.icon_pokemon} />
+            )}
+          </span>
+        );
+      })()}
      <div className="card-boss-name">{boss.name}</div>
       <div className="card-detail">
         Spawn: {boss.spawn_time ?? "—"} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
