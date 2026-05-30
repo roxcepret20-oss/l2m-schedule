@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BossCard from "./BossCard/BossCard";
+import EventCard from "./EventCard/EventCard";
 import { motion, AnimatePresence } from "framer-motion";
 
 function computeSpawnTime(kill_time, interval, tzOffset = 0) {
@@ -41,6 +42,32 @@ function categoryPoints(boss) {
   return 0;
 }
 
+// events.time.days uses 0=Monday, 6=Sunday; JS getDay() uses 0=Sunday
+function toEventDayIndex(jsDay) {
+  return (jsDay + 6) % 7;
+}
+
+function computeEventSpawnTime(timeStr, tzOffset = 0) {
+  if (!timeStr || timeStr.length < 4) return null;
+  const baseHH = parseInt(timeStr.slice(0, 2), 10);
+  const baseMM = parseInt(timeStr.slice(2, 4), 10);
+  const d = new Date();
+  d.setHours(baseHH + tzOffset, baseMM, 0, 0);
+  if (Date.now() - d.getTime() > 5 * 60 * 1000) d.setDate(d.getDate() + 1);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function processEvents(events, tzOffset = 0) {
+  const today = toEventDayIndex(new Date().getDay());
+  return events
+    .filter(e => e.is_active && Array.isArray(e.time?.days) && e.time.days.includes(today))
+    .map(e => ({
+      ...e,
+      _type: "event",
+      spawn_time: computeEventSpawnTime(e.time.time, tzOffset),
+    }));
+}
+
 function withSpawnSorted(list, tzOffset = 0) {
   return list
     .filter(b => {
@@ -58,25 +85,38 @@ function withSpawnSorted(list, tzOffset = 0) {
     });
 }
 
-export default function BossContainer({ bosses = [], tzOffset = 0 }) {
+function mergeAndSort(bosses, events, tzOffset = 0) {
+  const bossList = withSpawnSorted(bosses, tzOffset).map(b => ({ ...b, _type: "boss" }));
+  const eventList = processEvents(events, tzOffset);
+  const combined = [...bossList, ...eventList];
+  const now = Date.now();
+  return combined.sort((a, b) => {
+    const timeDiff =
+      Math.abs(spawnTimeToMs(a.spawn_time) - now) -
+      Math.abs(spawnTimeToMs(b.spawn_time) - now);
+    if (timeDiff !== 0) return timeDiff;
+    return categoryPoints(b) - categoryPoints(a);
+  });
+}
+
+export default function BossContainer({ bosses = [], events = [], tzOffset = 0 }) {
   const [now, setNow] = useState(() => Date.now());
 
-  // local copy of bosses so we can update spawn values (e.g. clear expired)
-  const [visibleBosses, setVisibleBosses] = useState(() => withSpawnSorted(bosses, tzOffset));
+  const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset));
 
-  // keep local copy in sync when prop or timezone changes
+  // keep local copy in sync when props or timezone changes
   useEffect(() => {
-    setVisibleBosses(withSpawnSorted(bosses, tzOffset));
-  }, [bosses, tzOffset]);
+    setVisibleItems(mergeAndSort(bosses, events, tzOffset));
+  }, [bosses, events, tzOffset]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5 * 1000);
     return () => clearInterval(t);
   }, []);
 
-  // every tick, clear spawn if it's older than 1 minute
+  // every tick, clear spawn if it's older than 2 minutes
   useEffect(() => {
-    setVisibleBosses(prev => {
+    setVisibleItems(prev => {
       const cutoff = now - 2 * 60 * 1000; // 1 minute ago
       return prev.filter(b => {
         if (!b.spawn_time) return true;
@@ -96,9 +136,9 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
   return (
     <div className="card-grid">
       <AnimatePresence>
-        {visibleBosses.map((boss, index) => (
+        {visibleItems.map((item) => (
           <motion.div
-            key={boss.name + boss.type}
+            key={item._type === "event" ? `event-${item.name}` : item.name + item.type}
             layout
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +158,9 @@ export default function BossContainer({ bosses = [], tzOffset = 0 }) {
             }}
             transition={{ duration: 0.35, layout: { duration: 0.4, ease: "easeOut" } }}
           >
-             <BossCard boss={boss} tzOffset={tzOffset} />
+            {item._type === "event"
+              ? <EventCard event={item} />
+              : <BossCard boss={item} tzOffset={tzOffset} />}
           </motion.div>
         ))}
       </AnimatePresence>

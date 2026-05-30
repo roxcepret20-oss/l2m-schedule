@@ -20,6 +20,9 @@
 
   --blue-bg: #EFF6FF;
   --blue-border: #BFDBFE;
+
+  --event-bg: #FFFBEB;
+  --event-border: #FDE68A;
 }
 
 html,body {
@@ -125,6 +128,8 @@ html,body {
   transform: translateX(0);
   transition: transform 0.35s ease, opacity 0.35s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 .slide-out {
   transform: translateX(-120%);
@@ -299,6 +304,9 @@ html,body {
 
     --blue-bg: #0F1F33;
     --blue-border: #1D4ED8;
+
+    --event-bg: #2D1F00;
+    --event-border: #92400E;
   }
 }
 
@@ -323,4 +331,7 @@ html[data-theme="dark"] {
 
   --blue-bg: #0F1F33;
   --blue-border: #1D4ED8;
+
+  --event-bg: #2D1F00;
+  --event-border: #92400E;
 }

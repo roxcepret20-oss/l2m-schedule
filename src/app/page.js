@@ -17,6 +17,7 @@ const TIMEZONES = [
 
 export default function Bosses() {
   const [bosses, setBosses] = useState(null);
+  const [events, setEvents] = useState(null);
   const [tzKey, setTzKey] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tzKey") || "WIB";
@@ -31,18 +32,28 @@ export default function Bosses() {
 
   useEffect(() => {
     let mounted = true;
+
+    const fetchEvents = () => {
+      fetch("/api/events")
+        .then(res => res.json())
+        .then(data => { if (mounted) setEvents(Array.isArray(data) ? data : []); })
+        .catch(() => { if (mounted) setEvents([]); });
+    };
+
     const fetchBosses = () => {
       fetch("/api/bosses")
         .then(res => res.json())
         .then(data => { if (mounted) setBosses(data); })
-        .catch(() => {});
+        .catch(() => { if (mounted) setBosses([]); });
     };
+
+    fetchEvents();
     fetchBosses();
     const interval = setInterval(fetchBosses, 2 * 60 * 60 * 1000);
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  if (!bosses) return (
+  if (!bosses || !events) return (
     <Loader />
   );
 
@@ -64,7 +75,7 @@ export default function Bosses() {
           ))}
         </select>
       </div>
-      <BossContainer bosses={bosses} tzOffset={tzOffset} />
+      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} />
     </div>
   );
 }

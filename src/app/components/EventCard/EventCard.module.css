@@ -1,0 +1,19 @@
+.event_card {
+  background-color: var(--event-bg);
+  border: 1px solid var(--event-border);
+}
+
+.event_badge {
+  position: absolute;
+  top: -10px;
+  right: 8px;
+  background: linear-gradient(135deg, #D97706, #F59E0B);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.45);
+}
