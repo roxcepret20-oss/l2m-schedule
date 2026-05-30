@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import styles from "./EventCard.module.css";
+import eventVoice from "../../Helper/EventVoice";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -34,9 +35,15 @@ function formatCountdown(ms) {
 export default function EventCard({ event }) {
   const spawnDateRef = useRef(parseSpawnToDate(event.spawn_time));
   const [now, setNow] = useState(() => Date.now());
+  const played5Ref = useRef(false);
+
+  const FIVE_MIN_MS = 5 * 60 * 1000;
+  const ALERT_WINDOW_MS = 10000;
+  const isVisible = typeof document === "undefined" ? true : !document.hidden;
 
   useEffect(() => {
     spawnDateRef.current = parseSpawnToDate(event.spawn_time);
+    played5Ref.current = false;
   }, [event.spawn_time]);
 
   useEffect(() => {
@@ -44,9 +51,26 @@ export default function EventCard({ event }) {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    eventVoice.init();
+  }, []);
+
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
   const timerText = remaining == null ? "—" : formatCountdown(remaining);
+
+  useEffect(() => {
+    if (remaining == null) return;
+    if (
+      remaining <= FIVE_MIN_MS &&
+      remaining > FIVE_MIN_MS - ALERT_WINDOW_MS &&
+      !played5Ref.current &&
+      isVisible
+    ) {
+      played5Ref.current = true;
+      eventVoice.speakPrepare(event.name);
+    }
+  }, [remaining, event.name, isVisible]);
 
   return (
     <div className={`card-container ${styles.event_card}`} aria-live="polite">
