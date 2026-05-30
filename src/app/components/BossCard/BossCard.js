@@ -37,6 +37,9 @@ function formatCountdown(ms) {
 }
 
 function getPointsInfo(boss) {
+  if (boss.name === "Queen Ant" || boss.name === "Core Susceptor") {
+    return { points: 3, label: "red" };
+  }
   if (boss.category === "ffa") return { points: 5, label: "ffa" };
   if (boss.category === "red") return { points: 3, label: "red" };
   return null;
