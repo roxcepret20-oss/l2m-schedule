@@ -29,7 +29,13 @@ class EventVoice {
   speakPrepare(eventName) {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     this.init();
-    const msg = new SpeechSynthesisUtterance(`Prepare for ${eventName}`);
+    const spokenEventName =
+      eventName === "Clan Catacomb I"
+        ? "Clan Catacomb First round"
+        : eventName === "Clan Catacomb II"
+          ? "Clan Catacomb Second Round"
+          : eventName;
+    const msg = new SpeechSynthesisUtterance(`Prepare for ${spokenEventName}`);
     const voice = this.getVoice();
     if (voice) msg.voice = voice;
     window.speechSynthesis.cancel();
