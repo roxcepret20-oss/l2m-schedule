@@ -18,6 +18,7 @@ const TIMEZONES = [
 export default function Bosses() {
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
+  const [ffaDays, setFfaDays] = useState(null);
   const [tzKey, setTzKey] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tzKey") || "WIB";
@@ -40,6 +41,13 @@ export default function Bosses() {
         .catch(() => { if (mounted) setEvents([]); });
     };
 
+    const fetchFfaDays = () => {
+      fetch("/api/ffa-day")
+        .then(res => res.json())
+        .then(data => { if (mounted) setFfaDays(data); })
+        .catch(() => { if (mounted) setFfaDays(null); });
+    };
+
     const fetchBosses = () => {
       fetch("/api/bosses")
         .then(res => res.json())
@@ -48,16 +56,18 @@ export default function Bosses() {
     };
 
     fetchEvents();
+    fetchFfaDays();
     fetchBosses();
     const interval = setInterval(fetchBosses, 2 * 60 * 60 * 1000);
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  if (!bosses || !events) return (
+  if (!bosses || !events || !ffaDays) return (
     <Loader />
   );
 
   const tzOffset = TIMEZONES.find(t => t.key === tzKey)?.offset ?? 0;
+  const isFfa = ffaDays?.is_ffa ?? false;
 
   return (
     <div>
@@ -75,7 +85,7 @@ export default function Bosses() {
           ))}
         </select>
       </div>
-      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} />
+      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} isFfa={isFfa} />
     </div>
   );
 }

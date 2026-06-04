@@ -46,7 +46,8 @@ function getPointsInfo(boss) {
 }
 
 // Returns 'both' | 'pokemon' | 'digimon' based on WIB (UTC+7) game server time at spawn
-function getClanType(spawnDate, tzOffset = 0, category, name) {
+function getClanType(spawnDate, tzOffset = 0, category, name, isFfa = false) {
+  if (isFfa) return "both";
   if (category === "ffa" || name === "Queen Ant" || name === "Core Susceptor") return "both";
   if (!spawnDate) return "both";
   // spawnDate is a JS Date whose HH:mm was set in display TZ (WIB + tzOffset).
@@ -65,7 +66,7 @@ function getClanType(spawnDate, tzOffset = 0, category, name) {
   return "digimon";
 }
 
-export default function BossCard({ boss, tzOffset = 0 }) {
+export default function BossCard({ boss, tzOffset = 0, isFfa = false }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
@@ -136,7 +137,7 @@ export default function BossCard({ boss, tzOffset = 0 }) {
         </span>
       )}
       {boss.type !== "invasion" && (() => {
-        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name);
+        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, isFfa);
         return (
           <span className={styles.world_badge}>
             {clan === "both" && (

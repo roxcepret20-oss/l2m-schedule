@@ -99,7 +99,7 @@ function mergeAndSort(bosses, events, tzOffset = 0) {
   });
 }
 
-export default function BossContainer({ bosses = [], events = [], tzOffset = 0 }) {
+export default function BossContainer({ bosses = [], events = [], tzOffset = 0, isFfa = false }) {
   const [now, setNow] = useState(() => Date.now());
 
   const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset));
@@ -160,7 +160,7 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0 }
           >
             {item._type === "event"
               ? <EventCard event={item} />
-              : <BossCard boss={item} tzOffset={tzOffset} />}
+              : <BossCard boss={item} tzOffset={tzOffset} isFfa={isFfa} />}
           </motion.div>
         ))}
       </AnimatePresence>
