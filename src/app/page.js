@@ -67,7 +67,7 @@ export default function Bosses() {
   );
 
   const tzOffset = TIMEZONES.find(t => t.key === tzKey)?.offset ?? 0;
-  const isFfa = ffaDays?.is_ffa ?? false;
+  const ffaMode = ffaDays?.is_ffa ?? "NORMAL";
 
   return (
     <div>
@@ -85,7 +85,7 @@ export default function Bosses() {
           ))}
         </select>
       </div>
-      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} isFfa={isFfa} />
+      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} />
     </div>
   );
 }

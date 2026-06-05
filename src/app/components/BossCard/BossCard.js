@@ -46,8 +46,9 @@ function getPointsInfo(boss) {
 }
 
 // Returns 'both' | 'pokemon' | 'digimon' based on WIB (UTC+7) game server time at spawn
-function getClanType(spawnDate, tzOffset = 0, category, name, isFfa = false) {
-  if (isFfa) return "both";
+function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
+  if (ffaMode === "WAR") return "both";
+
   if (category === "ffa" || name === "Queen Ant" || name === "Core Susceptor") return "both";
   if (!spawnDate) return "both";
   // spawnDate is a JS Date whose HH:mm was set in display TZ (WIB + tzOffset).
@@ -58,15 +59,16 @@ function getClanType(spawnDate, tzOffset = 0, category, name, isFfa = false) {
   const wibDate = new Date(wibMs);
   const day = wibDate.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
   const hour = wibDate.getHours();
-  // Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
-  if ([1, 3, 5].includes(day)) return "both";
-  // Non-invasion days
+
+  // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
+  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
+  // Non-invasion days (and PEACE: skip invasion-day check, hour-only)
   if (hour < 8) return "both";
   if (hour < 16) return "pokemon";
   return "digimon";
 }
 
-export default function BossCard({ boss, tzOffset = 0, isFfa = false }) {
+export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
@@ -137,7 +139,7 @@ export default function BossCard({ boss, tzOffset = 0, isFfa = false }) {
         </span>
       )}
       {boss.type !== "invasion" && (() => {
-        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, isFfa);
+        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, ffaMode);
         return (
           <span className={styles.world_badge}>
             {clan === "both" && (
