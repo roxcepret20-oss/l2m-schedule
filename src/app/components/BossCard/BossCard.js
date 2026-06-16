@@ -36,20 +36,39 @@ function formatCountdown(ms) {
   return `-${Math.abs(Math.ceil(ms / 1000))}s`;
 }
 
-function getPointsInfo(boss) {
-  if (boss.name === "Queen Ant" || boss.name === "Core Susceptor") {
-    return { points: 3, label: "red" };
+function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
+  const cat = boss.category;
+  if (cat !== "ffa" && cat !== "red") return null;
+
+  if (ffaMode === "WAR") {
+    return { points: 5, label: cat };
   }
-  if (boss.category === "ffa") return { points: 5, label: "ffa" };
-  if (boss.category === "red") return { points: 3, label: "red" };
-  return null;
+
+  if (ffaMode === "PEACE") {
+    return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
+  }
+
+  // NORMAL: invasion days (Mon=1, Wed=3, Fri=5) → 5pts for both; otherwise ffa=3, red=1
+  if (spawnDate) {
+    const wibMs = spawnDate.getTime()
+      + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
+      - tzOffset * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
+    const day = wibDate.getDay();
+    const hour = wibDate.getHours();
+    if ([1, 3, 5].includes(day) && hour >= 8) {
+      return { points: 5, label: cat };
+    }
+  }
+
+  return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
 }
 
 // Returns 'both' | 'pokemon' | 'digimon' based on WIB (UTC+7) game server time at spawn
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
   if (ffaMode === "WAR") return "both";
 
-  if (category === "ffa" || name === "Queen Ant" || name === "Core Susceptor") return "both";
+  if (category === "ffa") return "both";
   if (!spawnDate) return "both";
   // spawnDate is a JS Date whose HH:mm was set in display TZ (WIB + tzOffset).
   // Convert to true WIB: undo machine offset → UTC → WIB, then subtract display tzOffset.
@@ -122,14 +141,14 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
   function cardStyleForBossType() {
     if (boss.type === "invasion") {
       return styles.boss_invasion;
-    } else if (boss.category === "ffa" || boss.name === "Queen Ant" || boss.name === "Core Susceptor") {
+    } else if (boss.category === "ffa") {
       return styles.boss_ffa;
     } else if (boss.category === "blue") {
       return styles.boss_blue;
     }
   }
 
-  const pointsInfo = getPointsInfo(boss);
+  const pointsInfo = getPointsInfo(boss, ffaMode, spawnDateRef.current, tzOffset);
 
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
