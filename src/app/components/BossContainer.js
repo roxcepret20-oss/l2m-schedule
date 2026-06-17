@@ -65,6 +65,7 @@ function processEvents(events, tzOffset = 0) {
       ...e,
       _type: "event",
       spawn_time: computeEventSpawnTime(e.time.time, tzOffset),
+      points: e.time.points ?? null,
     }));
 }
 

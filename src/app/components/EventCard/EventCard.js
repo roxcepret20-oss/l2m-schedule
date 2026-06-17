@@ -122,6 +122,31 @@ export default function EventCard({ event }) {
           </svg>
           pilo92
       </div>
+      {event.points != null && (() => {
+        const pts = Array.isArray(event.points) ? event.points : [event.points];
+        const BADGE_COLORS = [
+          { bg: "linear-gradient(135deg, #059669, #10B981)", shadow: "rgba(5, 150, 105, 0.4)" },
+          { bg: "linear-gradient(135deg, #D97706, #F59E0B)", shadow: "rgba(217, 119, 6, 0.4)" },
+          { bg: "linear-gradient(135deg, #2563EB, #3B82F6)", shadow: "rgba(37, 99, 235, 0.4)" },
+          { bg: "linear-gradient(135deg, #7C3AED, #8B5CF6)", shadow: "rgba(124, 58, 237, 0.4)" },
+        ];
+        return (
+          <div className={styles.points_badges}>
+            {pts.map((p, i) => (
+              <span
+                key={i}
+                className={styles.points_badge}
+                style={{
+                  background: BADGE_COLORS[i % BADGE_COLORS.length].bg,
+                  boxShadow: `0 2px 6px ${BADGE_COLORS[i % BADGE_COLORS.length].shadow}`,
+                }}
+              >
+                {p} pts
+              </span>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }

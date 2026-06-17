@@ -205,7 +205,7 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
         </div>
       )}
       {pointsInfo && (
-        <span className={`${styles.points_badge} ${styles[`pts_${pointsInfo.label}`]}`}>
+        <span className={`${styles.points_badge} ${styles[`pts_${pointsInfo.points}`]}`}>
           {pointsInfo.points} pts
         </span>
       )}
