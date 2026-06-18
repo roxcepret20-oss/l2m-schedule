@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import BossContainer from "./components/BossContainer";
 import Loader from "./components/ClientSideLoader";
 
@@ -15,10 +16,62 @@ const TIMEZONES = [
   { key: "MY",   label: "Malaysia (UTC+8)",               offset: 1 },
 ];
 
+function parseSpawnToDate(spawn) {
+  if (!spawn) return null;
+  if (spawn instanceof Date) return spawn;
+  const iso = new Date(spawn);
+  if (!isNaN(iso)) return iso;
+  const hhmm = String(spawn).match(/^(\d{1,2}):(\d{2})$/);
+  if (!hhmm) return null;
+  const now = new Date();
+  const d = new Date(now);
+  d.setHours(parseInt(hhmm[1], 10), parseInt(hhmm[2], 10), 0, 0);
+  if (now.getTime() - d.getTime() > 5 * 60 * 1000) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+function computeSpawnTime(kill_time, interval, tzOffset = 0) {
+  if (!kill_time) return null;
+  const now = new Date();
+  const hhmm = String(kill_time).match(/^(\d{1,2}):(\d{2})$/);
+  let d = null;
+  if (hhmm) {
+    d = new Date(now);
+    d.setHours(parseInt(hhmm[1], 10), parseInt(hhmm[2], 10), 0, 0);
+  } else {
+    const parsed = new Date(kill_time);
+    if (!isNaN(parsed)) d = parsed;
+  }
+  if (!d) return null;
+  const hrs = Number(interval);
+  if (isFinite(hrs) && hrs > 0) d.setHours(d.getHours() + hrs + tzOffset);
+  return d;
+}
+
+function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
+  if (ffaMode === "WAR") return "both";
+  if (category === "ffa") return "both"; 
+  if (!spawnDate) return "both";
+
+  const wibMs = spawnDate.getTime()
+    + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
+    - tzOffset * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const day = wibDate.getDay();
+  const hour = wibDate.getHours();
+
+  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
+  if (hour < 8) return "both";
+  if (hour < 16) return "pokemon";
+  return "digimon";
+}
+
 export default function Bosses() {
+  const searchParams = useSearchParams();
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [tzKey, setTzKey] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tzKey") || "WIB";
@@ -62,12 +115,56 @@ export default function Bosses() {
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
+  useEffect(() => {
+    let dailyId = null;
+
+    const getMsUntilNextJakarta0015 = () => {
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const MINUTE_MS = 60 * 1000;
+      const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000; // UTC+7
+      const TARGET_MS = 15 * MINUTE_MS; // 00:15
+
+      const nowMs = Date.now();
+      const jakartaMsInDay = ((nowMs + JAKARTA_OFFSET_MS) % DAY_MS + DAY_MS) % DAY_MS;
+      let delta = TARGET_MS - jakartaMsInDay;
+      if (delta <= 0) delta += DAY_MS;
+      return delta;
+    };
+
+    // Force a local rerender daily at 00:15 Jakarta time.
+    const timeoutId = setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+      dailyId = setInterval(() => {
+        setRefreshKey(prev => prev + 1);
+      }, 24 * 60 * 60 * 1000);
+    }, getMsUntilNextJakarta0015());
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (dailyId) clearInterval(dailyId);
+    };
+  }, []);
+
   if (!bosses || !events || !ffaDays) return (
     <Loader />
   );
 
   const tzOffset = TIMEZONES.find(t => t.key === tzKey)?.offset ?? 0;
   const ffaMode = ffaDays?.is_ffa ?? "NORMAL";
+  const view = searchParams.get("view") || "all";
+
+  const filteredBosses = (bosses || []).filter((boss) => {
+    if (view === "all") return true;
+    if (view === "ffa") return boss.category === "ffa";
+    if (view === "digimon" || view === "pokemon") {
+      if (boss.category === "ffa") return true;
+      const spawnDate = computeSpawnTime(boss.kill_time, boss.interval, tzOffset)
+        || parseSpawnToDate(boss.kill_time);
+      const clan = getClanType(spawnDate, tzOffset, boss.category, ffaMode);
+      return clan === view || clan === "both";
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -85,7 +182,13 @@ export default function Bosses() {
           ))}
         </select>
       </div>
-      <BossContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} />
+      <BossContainer
+        key={refreshKey}
+        bosses={filteredBosses}
+        events={events}
+        tzOffset={tzOffset}
+        ffaMode={ffaMode}
+      />
     </div>
   );
 }
