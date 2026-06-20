@@ -36,6 +36,14 @@ function formatCountdown(ms) {
   return `-${Math.abs(Math.ceil(ms / 1000))}s`;
 }
 
+function formatSpawnDisplay(spawn) {
+  const d = parseSpawnToDate(spawn);
+  if (!d) return spawn ?? "—";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
@@ -178,7 +186,7 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
       })()}
      <div className="card-boss-name">{boss.name}</div>
       <div className="card-detail">
-        Spawn: {boss.spawn_time ?? "—"} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
+        Spawn: {formatSpawnDisplay(boss.spawn_time)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
       </div>
       <div className="card-timer">
         <svg className="timer-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">

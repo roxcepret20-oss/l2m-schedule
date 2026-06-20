@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "@/lib/supabase";
 
 export async function fetchBossContents(category, names = []) {
-  const select = `select=name,type,kill_time,interval,percentage,category,updated_by`;
+  const select = `select=name,type,kill_time,kill_timestamp,interval,percentage,category,updated_by`;
   let filter = '';
   if (category && names.length > 0) {
     const orParts = [`category.eq.${category}`, ...names.map(n => `name.eq.${n}`)].join(',');

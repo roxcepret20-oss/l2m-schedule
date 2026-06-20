@@ -158,8 +158,9 @@ export default function Bosses() {
     if (view === "ffa") return boss.category === "ffa";
     if (view === "digimon" || view === "pokemon") {
       if (boss.category === "ffa") return true;
-      const spawnDate = computeSpawnTime(boss.kill_time, boss.interval, tzOffset)
-        || parseSpawnToDate(boss.kill_time);
+      const baseKillTime = boss.kill_timestamp ?? boss.kill_time;
+      const spawnDate = computeSpawnTime(baseKillTime, boss.interval, tzOffset)
+        || parseSpawnToDate(baseKillTime);
       const clan = getClanType(spawnDate, tzOffset, boss.category, ffaMode);
       return clan === view || clan === "both";
     }

@@ -21,13 +21,13 @@ function computeSpawnTime(kill_time, interval, tzOffset = 0) {
   const hrs = Number(interval);
   if (!isFinite(hrs) || hrs <= 0) return d.toISOString();
   d.setHours(d.getHours() + hrs + tzOffset);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
+  return d.toISOString();
 }
 
 function spawnTimeToMs(spawn_time) {
   if (!spawn_time) return Infinity;
+  const parsed = new Date(spawn_time);
+  if (!isNaN(parsed)) return parsed.getTime();
   const [hh, mm] = spawn_time.split(":").map(Number);
   const now = new Date();
   const d = new Date(now);
@@ -77,7 +77,10 @@ function withSpawnSorted(list, tzOffset = 0) {
       if (invasionDays.includes(day)) return true; 
       return b.type !== "invasion";
     })
-    .map(b => ({ ...b, spawn_time: computeSpawnTime(b.kill_time, b.interval, tzOffset) }))
+    .map(b => {
+      const baseKillTime = b.kill_timestamp ?? b.kill_time;
+      return { ...b, spawn_time: computeSpawnTime(baseKillTime, b.interval, tzOffset) };
+    })
     .sort((a, b) => {
       const now = Date.now();
       const timeDiff = Math.abs(spawnTimeToMs(a.spawn_time) - now) - Math.abs(spawnTimeToMs(b.spawn_time) - now);
@@ -121,10 +124,7 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
       const cutoff = now - 2 * 60 * 1000; // 1 minute ago
       return prev.filter(b => {
         if (!b.spawn_time) return true;
-        const [hh, mm] = b.spawn_time.split(":").map(Number);
-        const d = new Date();
-        d.setHours(hh, mm, 0, 0);
-        const ms = d.getTime();
+        const ms = spawnTimeToMs(b.spawn_time);
         
         if (isNaN(ms)) return true;
         // keep if not expired, OR if the difference is more than 30 min
