@@ -36,6 +36,11 @@ function spawnTimeToMs(spawn_time) {
   return d.getTime();
 }
 
+function hasExplicitDate(spawn_time) {
+  if (typeof spawn_time !== "string") return false;
+  return /^\d{4}-\d{2}-\d{2}/.test(spawn_time);
+}
+
 function categoryPoints(boss) {
   if (boss.category === "ffa") return 5;
   if (boss.category === "red") return 3;
@@ -121,15 +126,16 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
   // every tick, clear spawn if it's older than 2 minutes
   useEffect(() => {
     setVisibleItems(prev => {
-      const cutoff = now - 2 * 60 * 1000; // 1 minute ago
+      const cutoff = now - 2 * 60 * 1000; // keep until 120s after spawn
       return prev.filter(b => {
         if (!b.spawn_time) return true;
+        // Time-only entries are recurring schedule style and should roll to tomorrow.
+        // Only enforce hard expiry for entries with a real date/timestamp.
+        if (!hasExplicitDate(b.spawn_time)) return true;
         const ms = spawnTimeToMs(b.spawn_time);
         
         if (isNaN(ms)) return true;
-        // keep if not expired, OR if the difference is more than 30 min
-        // (large gap = spawn is actually tomorrow, not truly expired)
-        return ms > cutoff || (cutoff - ms) > 30 * 60 * 1000;
+        return ms > cutoff;
       });
     });
   }, [now]);

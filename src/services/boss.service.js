@@ -1,6 +1,9 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "@/lib/supabase";
 
-export async function fetchBossContents(category, names = []) {
+const ALLOWED_BOSS_TABLES = new Set(["bosses", "bosses_duplicate"]);
+
+export async function fetchBossContents(category, names = [], tableName = "bosses") {
+  const safeTableName = ALLOWED_BOSS_TABLES.has(tableName) ? tableName : "bosses";
   const select = `select=name,type,kill_time,kill_timestamp,interval,percentage,category,updated_by`;
   let filter = '';
   if (category && names.length > 0) {
@@ -14,7 +17,7 @@ export async function fetchBossContents(category, names = []) {
   }
   const params = select + filter;
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/bosses?${params}`,
+    `${SUPABASE_URL}/rest/v1/${safeTableName}?${params}`,
     {
       method: "GET",
       headers: {
