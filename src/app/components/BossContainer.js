@@ -36,6 +36,19 @@ function spawnTimeToMs(spawn_time) {
   return d.getTime();
 }
 
+// Same as spawnTimeToMs but does NOT roll time-only entries to tomorrow.
+// Used for expiry checks so past events are not kept alive indefinitely.
+function spawnTimeToMsNoRoll(spawn_time) {
+  if (!spawn_time) return Infinity;
+  const parsed = new Date(spawn_time);
+  if (!isNaN(parsed)) return parsed.getTime();
+  const [hh, mm] = spawn_time.split(":").map(Number);
+  const now = new Date();
+  const d = new Date(now);
+  d.setHours(hh, mm, 0, 0);
+  return d.getTime();
+}
+
 function hasExplicitDate(spawn_time) {
   if (typeof spawn_time !== "string") return false;
   return /^\d{4}-\d{2}-\d{2}/.test(spawn_time);
@@ -129,11 +142,11 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
       const cutoff = now - 2 * 60 * 1000; // keep until 120s after spawn
       return prev.filter(b => {
         if (!b.spawn_time) return true;
-        // Time-only entries are recurring schedule style and should roll to tomorrow.
-        // Only enforce hard expiry for entries with a real date/timestamp.
-        if (!hasExplicitDate(b.spawn_time)) return true;
-        const ms = spawnTimeToMs(b.spawn_time);
-        
+        // Use no-roll variant so time-only entries (events) are also expired
+        // when they are more than 120s past their scheduled time.
+        const ms = hasExplicitDate(b.spawn_time)
+          ? spawnTimeToMs(b.spawn_time)
+          : spawnTimeToMsNoRoll(b.spawn_time);
         if (isNaN(ms)) return true;
         return ms > cutoff;
       });
