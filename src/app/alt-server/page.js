@@ -62,8 +62,8 @@ function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
 
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
   if (hour < 8) return "both";
-  if (hour < 16) return "pokemon";
-  return "digimon";
+  if (hour < 16) return "sentinel";
+  return "scourge";
 }
 
 export default function AltServerBosses() {
@@ -155,7 +155,7 @@ export default function AltServerBosses() {
   const filteredBosses = (bosses || []).filter((boss) => {
     if (view === "all") return true;
     if (view === "ffa") return boss.category === "ffa";
-    if (view === "digimon" || view === "pokemon") {
+    if (view === "scourge" || view === "sentinel") {
       if (boss.category === "ffa") return true;
       const baseKillTime = boss.kill_timestamp ?? boss.kill_time;
       const spawnDate = computeSpawnTime(baseKillTime, boss.interval, tzOffset)

@@ -13,17 +13,17 @@ export default function Navbar() {
   const navOptions = [
     { value: "all", label: "All Bosses", href: "/" },
     { value: "ffa", label: "FFA", href: "/?view=ffa" },
-    { value: "digimon", label: "Digimon", href: "/?view=digimon" },
-    { value: "pokemon", label: "Pokemon Boss", href: "/?view=pokemon" }
+    { value: "scourge", label: "Scourge", href: "/?view=scourge" },
+    { value: "sentinel", label: "Sentinel", href: "/?view=sentinel" }
   ];
 
   const currentView = searchParams.get("view");
   const selectedValue = currentView === "ffa"
     ? "ffa"
-    : currentView === "digimon"
-      ? "digimon"
-      : currentView === "pokemon"
-        ? "pokemon"
+    : currentView === "scourge"
+      ? "scourge"
+      : currentView === "sentinel"
+        ? "sentinel"
         : "all";
 
   const selectedOption = navOptions.find((option) => option.value === selectedValue) || navOptions[0];
