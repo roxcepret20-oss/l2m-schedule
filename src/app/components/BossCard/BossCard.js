@@ -90,8 +90,7 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
   // Non-invasion days (and PEACE: skip invasion-day check, hour-only)
-  if (hour < 8) return "both";
-  if (hour < 16) return "pokemon";
+  if (hour < 12) return "pokemon";
   return "digimon";
 }
 
