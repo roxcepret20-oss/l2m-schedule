@@ -72,7 +72,7 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
 }
 
-// Returns 'both' | 'pokemon' | 'digimon' based on WIB (UTC+7) game server time at spawn
+// Returns 'both' | 'sentinel' | 'scourge' based on WIB (UTC+7) game server time at spawn
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
   if (ffaMode === "WAR") return "both";
 
@@ -90,8 +90,8 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
   // Non-invasion days (and PEACE: skip invasion-day check, hour-only)
-  if (hour < 12) return "pokemon";
-  return "digimon";
+  if (hour < 12) return "sentinel";
+  return "scourge";
 }
 
 export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
@@ -170,15 +170,15 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
           <span className={styles.world_badge}>
             {clan === "both" && (
               <>
-                <img src="/digimon_icon.png" alt="Digimon" width={28} height={28} className={styles.icon_digimon} />
-                <img src="/pokemon_icon.png" alt="Pokemon" width={28} height={28} className={styles.icon_pokemon} />
+                <img src="/scourge_icon.png" alt="Scourge" width={36} height={36} className={styles.icon_scourge} />
+                <img src="/sentinel_icon.png" alt="Sentinel" width={36} height={36} className={styles.icon_sentinel} />
               </>
             )}
-            {clan === "digimon" && (
-              <img src="/digimon_icon.png" alt="Digimon" width={28} height={28} className={styles.icon_digimon} />
+            {clan === "scourge" && (
+              <img src="/scourge_icon.png" alt="Scourge" width={36} height={36} className={styles.icon_scourge} />
             )}
-            {clan === "pokemon" && (
-              <img src="/pokemon_icon.png" alt="Pokemon" width={28} height={28} className={styles.icon_pokemon} />
+            {clan === "sentinel" && (
+              <img src="/sentinel_icon.png" alt="Sentinel" width={36} height={36} className={styles.icon_sentinel} />
             )}
           </span>
         );
