@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import BossCard from "./BossCard/BossCard";
+import NokaBossCard from "./BossCard/NokaBossCard";
 import EventCard from "./EventCard/EventCard";
+import NokaEventCard from "./EventCard/NokaEventCard";
 import { motion, AnimatePresence } from "framer-motion";
 
 function computeSpawnTime(kill_time, interval, tzOffset = 0) {
@@ -121,7 +123,7 @@ function mergeAndSort(bosses, events, tzOffset = 0) {
   });
 }
 
-export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL" }) {
+export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", theme = "simple" }) {
   const [now, setNow] = useState(() => Date.now());
 
   const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset));
@@ -154,7 +156,7 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
   }, [now]);
 
   return (
-    <div className="card-grid">
+    <div className={`card-grid${theme === 'noka' ? ' noka-grid' : ''}`}>
       <AnimatePresence>
         {visibleItems.map((item) => (
           <motion.div
@@ -179,8 +181,12 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
             transition={{ duration: 0.35, layout: { duration: 0.4, ease: "easeOut" } }}
           >
             {item._type === "event"
-              ? <EventCard event={item} />
-              : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} />}
+              ? theme === "noka"
+                ? <NokaEventCard event={item} />
+                : <EventCard event={item} />
+              : theme === "noka"
+                ? <NokaBossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} />
+                : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} />}
           </motion.div>
         ))}
       </AnimatePresence>

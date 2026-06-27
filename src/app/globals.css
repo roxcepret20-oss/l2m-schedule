@@ -179,7 +179,8 @@ html,body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  margin-top: 16px;
   justify-content: flex-end;
 }
 .tz-label {
@@ -211,6 +212,16 @@ html,body {
 @media (max-width: 600px) {
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .card-grid.noka-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .card-grid.noka-grid {
+    grid-template-columns: 1fr;
   }
 }
 .card-container {

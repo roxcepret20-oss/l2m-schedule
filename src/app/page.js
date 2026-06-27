@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BossContainer from "./components/BossContainer";
+import ThemeSelector from "./components/ThemeSelector";
 import Loader from "./components/ClientSideLoader";
 
 const TIMEZONES = [
@@ -71,12 +72,23 @@ export default function Bosses() {
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "simple";
+    }
+    return "simple";
+  });
   const [tzKey, setTzKey] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tzKey") || "WIB";
     }
     return "WIB";
   });
+
+  function handleThemeChange(newTheme) {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  }
 
   function handleTzChange(key) {
     setTzKey(key);
@@ -168,7 +180,10 @@ export default function Bosses() {
 
   return (
     <div>
-      <div className="page-title">All Boss Schedule</div>
+      <div className="tz-bar">
+        <label className="tz-label">Theme</label>
+        <ThemeSelector theme={theme} onThemeChange={handleThemeChange} />
+      </div>
       <div className="tz-bar">
         <label className="tz-label" htmlFor="tz-select">Timezone</label>
         <select
@@ -188,6 +203,7 @@ export default function Bosses() {
         events={events}
         tzOffset={tzOffset}
         ffaMode={ffaMode}
+        theme={theme}
       />
     </div>
   );
