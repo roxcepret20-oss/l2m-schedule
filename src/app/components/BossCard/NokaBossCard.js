@@ -54,7 +54,7 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   const day = wibDate.getDay();
   const hour = wibDate.getHours();
 
-  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
+  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
   if (hour < 12) return "sentinel";
   return "scourge";
 }

@@ -87,8 +87,8 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   const day = wibDate.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
   const hour = wibDate.getHours();
 
-  // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans all day
-  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day)) return "both";
+  // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans after 08:00 WIB
+  if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
   // Non-invasion days (and PEACE: skip invasion-day check, hour-only)
   if (hour < 12) return "sentinel";
   return "scourge";
