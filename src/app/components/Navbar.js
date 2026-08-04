@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/featureFlags";
 
 export default function Navbar() {
   const router = useRouter();
@@ -13,17 +14,19 @@ export default function Navbar() {
   const navOptions = [
     { value: "all", label: "All Bosses", href: "/" },
     { value: "ffa", label: "FFA", href: "/?view=ffa" },
-    { value: "scourge", label: "Scourge", href: "/?view=scourge" },
-    { value: "sentinel", label: "Sentinel", href: "/?view=sentinel" }
+    ...(MULTI_CLAN_MODE ? [
+      { value: CLAN_SECONDARY, label: CLAN_SECONDARY[0].toUpperCase() + CLAN_SECONDARY.slice(1), href: `/?view=${CLAN_SECONDARY}` },
+      { value: CLAN_PRIMARY,   label: CLAN_PRIMARY[0].toUpperCase()   + CLAN_PRIMARY.slice(1),   href: `/?view=${CLAN_PRIMARY}` },
+    ] : []),
   ];
 
   const currentView = searchParams.get("view");
   const selectedValue = currentView === "ffa"
     ? "ffa"
-    : currentView === "scourge"
-      ? "scourge"
-      : currentView === "sentinel"
-        ? "sentinel"
+    : MULTI_CLAN_MODE && currentView === CLAN_SECONDARY
+      ? CLAN_SECONDARY
+      : MULTI_CLAN_MODE && currentView === CLAN_PRIMARY
+        ? CLAN_PRIMARY
         : "all";
 
   const selectedOption = navOptions.find((option) => option.value === selectedValue) || navOptions[0];

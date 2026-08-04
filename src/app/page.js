@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import BossContainer from "./components/BossContainer";
 import ThemeSelector from "./components/ThemeSelector";
 import Loader from "./components/ClientSideLoader";
+import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../lib/featureFlags";
 
 const TIMEZONES = [
   { key: "WIB",  label: "WIB — West Indonesia (UTC+7)",  offset: 0 },
@@ -51,7 +52,7 @@ function computeSpawnTime(kill_time, interval, tzOffset = 0) {
 
 function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
   if (ffaMode === "WAR") return "both";
-  if (category === "ffa") return "both"; 
+  if (category === "ffa") return "both";
   if (!spawnDate) return "both";
 
   const wibMs = spawnDate.getTime()
@@ -62,8 +63,8 @@ function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
   const hour = wibDate.getHours();
 
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
-  if (hour < 12) return "sentinel";
-  return "scourge";
+  if (hour < 12) return CLAN_PRIMARY;
+  return CLAN_SECONDARY;
 }
 
 export default function Bosses() {
@@ -165,9 +166,8 @@ export default function Bosses() {
   const view = searchParams.get("view") || "all";
 
   const filteredBosses = (bosses || []).filter((boss) => {
-    if (view === "all") return true;
     if (view === "ffa") return boss.category === "ffa";
-    if (view === "scourge" || view === "sentinel") {
+    if (MULTI_CLAN_MODE && (view === CLAN_SECONDARY || view === CLAN_PRIMARY)) {
       if (boss.category === "ffa") return true;
       const baseKillTime = boss.kill_timestamp ?? boss.kill_time;
       const spawnDate = computeSpawnTime(baseKillTime, boss.interval, tzOffset)

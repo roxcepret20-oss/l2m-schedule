@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import styles from "./BossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
+import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
   if (spawn instanceof Date) return spawn;
@@ -72,26 +73,21 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
 }
 
-// Returns 'both' | 'sentinel' | 'scourge' based on WIB (UTC+7) game server time at spawn
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
   if (ffaMode === "WAR") return "both";
-
   if (category === "ffa") return "both";
   if (!spawnDate) return "both";
-  // spawnDate is a JS Date whose HH:mm was set in display TZ (WIB + tzOffset).
-  // Convert to true WIB: undo machine offset → UTC → WIB, then subtract display tzOffset.
+
   const wibMs = spawnDate.getTime()
     + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
     - tzOffset * 60 * 60 * 1000;
   const wibDate = new Date(wibMs);
-  const day = wibDate.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  const day = wibDate.getDay();
   const hour = wibDate.getHours();
 
-  // NORMAL: Invasion days (Mon=1, Wed=3, Fri=5): both clans after 08:00 WIB
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
-  // Non-invasion days (and PEACE: skip invasion-day check, hour-only)
-  if (hour < 12) return "sentinel";
-  return "scourge";
+  if (hour < 12) return CLAN_PRIMARY;
+  return CLAN_SECONDARY;
 }
 
 export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
@@ -165,7 +161,9 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
         </span>
       )}
       {boss.type !== "invasion" && (() => {
-        const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, ffaMode);
+        const clan = MULTI_CLAN_MODE
+          ? getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, ffaMode)
+          : CLAN_PRIMARY;
         return (
           <span className={styles.world_badge}>
             {clan === "both" && (
@@ -174,10 +172,10 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
                 <img src="/sentinel_icon.png" alt="Sentinel" width={36} height={36} className={styles.icon_sentinel} />
               </>
             )}
-            {clan === "scourge" && (
+            {clan === CLAN_SECONDARY && (
               <img src="/scourge_icon.png" alt="Scourge" width={36} height={36} className={styles.icon_scourge} />
             )}
-            {clan === "sentinel" && (
+            {clan === CLAN_PRIMARY && (
               <img src="/sentinel_icon.png" alt="Sentinel" width={36} height={36} className={styles.icon_sentinel} />
             )}
           </span>

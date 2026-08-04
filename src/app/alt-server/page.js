@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BossContainer from "../components/BossContainer";
+import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/featureFlags";
 import Loader from "../components/ClientSideLoader";
 
 const TIMEZONES = [
@@ -62,8 +63,8 @@ function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
 
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
   if (hour < 8) return "both";
-  if (hour < 16) return "sentinel";
-  return "scourge";
+  if (hour < 16) return CLAN_PRIMARY;
+  return CLAN_SECONDARY;
 }
 
 export default function AltServerBosses() {
@@ -153,9 +154,8 @@ export default function AltServerBosses() {
   const view = searchParams.get("view") || "all";
 
   const filteredBosses = (bosses || []).filter((boss) => {
-    if (view === "all") return true;
     if (view === "ffa") return boss.category === "ffa";
-    if (view === "scourge" || view === "sentinel") {
+    if (MULTI_CLAN_MODE && (view === CLAN_SECONDARY || view === CLAN_PRIMARY)) {
       if (boss.category === "ffa") return true;
       const baseKillTime = boss.kill_timestamp ?? boss.kill_time;
       const spawnDate = computeSpawnTime(baseKillTime, boss.interval, tzOffset)

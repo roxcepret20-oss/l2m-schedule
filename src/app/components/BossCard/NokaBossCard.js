@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import styles from "./NokaBossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
+import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -42,11 +43,12 @@ function formatSpawnDisplay(spawn) {
   return `${hh}:${mm}`;
 }
 
+
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
   if (ffaMode === "WAR") return "both";
   if (category === "ffa") return "both";
   if (!spawnDate) return "both";
-  
+
   const wibMs = spawnDate.getTime()
     + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
     - tzOffset * 60 * 60 * 1000;
@@ -55,8 +57,8 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   const hour = wibDate.getHours();
 
   if (ffaMode === "NORMAL" && [1, 3, 5].includes(day) && hour >= 8) return "both";
-  if (hour < 12) return "sentinel";
-  return "scourge";
+  if (hour < 12) return CLAN_PRIMARY;
+  return CLAN_SECONDARY;
 }
 
 function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
@@ -139,15 +141,10 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" })
     if (boss.category === "ffa") {
       return "url('/noka_theme/ffa.png')";
     }
-    
-    const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, ffaMode);
-    if (clan === "sentinel") {
-      return "url('/noka_theme/Sentinel_bar.png')";
+    if (MULTI_CLAN_MODE) {
+      const clan = getClanType(spawnDateRef.current, tzOffset, boss.category, boss.name, ffaMode);
+      if (clan === CLAN_SECONDARY) return "url('/noka_theme/Scourge_bar.png')";
     }
-    if (clan === "scourge") {
-      return "url('/noka_theme/Scourge_bar.png')";
-    }
-    // For "both" clans during invasion, use sentinel by default
     return "url('/noka_theme/Sentinel_bar.png')";
   }
 
