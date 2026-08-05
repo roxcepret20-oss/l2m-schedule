@@ -49,28 +49,25 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
 
+  const baseDate = spawnDate ?? new Date();
+  const wibMs = baseDate.getTime()
+    + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
+    - tzOffset * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const day = wibDate.getDay();
+  const hour = wibDate.getHours();
+
+  // Monday/Wednesday/Friday 08:00-24:00 => 3 points, except in PEACE mode.
+  if (ffaMode !== "PEACE" && [1, 3, 5].includes(day) && hour >= 8) {
+    return { points: 3, label: cat };
+  }
+
   if (ffaMode === "WAR") {
-    return { points: 5, label: cat };
+    return { points: hour < 8 ? 2 : 3, label: cat };
   }
 
-  if (ffaMode === "PEACE") {
-    return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
-  }
-
-  // NORMAL: invasion days (Mon=1, Wed=3, Fri=5) → 5pts for both; otherwise ffa=3, red=1
-  if (spawnDate) {
-    const wibMs = spawnDate.getTime()
-      + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
-      - tzOffset * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const day = wibDate.getDay();
-    const hour = wibDate.getHours();
-    if ([1, 3, 5].includes(day) && hour >= 8) {
-      return { points: 5, label: cat };
-    }
-  }
-
-  return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
+  // NORMAL and PEACE share the same time-based points.
+  return { points: hour < 6 ? 2 : 1, label: cat };
 }
 
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {
