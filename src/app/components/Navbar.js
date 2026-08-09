@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import VolumeSlider from "./VolumeSlider";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/featureFlags";
 
 export default function Navbar() {
@@ -89,6 +90,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
+       <VolumeSlider />
        <ThemeToggle />
     </nav>
   );

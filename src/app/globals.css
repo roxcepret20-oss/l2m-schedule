@@ -46,9 +46,42 @@ html,body {
   padding: 0 20px;
   background-color: var(--navbar-bg);
   box-shadow: var(--shadow-lg);
+  gap: 12px;
 }
 .logo { font-weight:700; color:var(--text); font-size:18px; }
-.nav-items { display:flex; gap:20px; align-items:center; margin-left:auto; }
+.nav-items { display:flex; gap:20px; align-items:center; margin-left:auto; min-width:0; }
+.navbar > .volume-slider,
+.navbar > .theme-toggle { flex-shrink: 0; }
+.volume-slider { position: relative; }
+.volume-toggle {
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.volume-toggle:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.volume-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-1);
+  padding: 10px 12px;
+}
+.volume-popover input[type="range"] { width: 110px; accent-color: var(--accent); cursor:pointer; display:block; }
+
+@media (max-width: 600px) {
+  .navbar { padding: 0 12px; gap: 6px; }
+  .logo { font-size: 15px; }
+  .nav-items { gap: 8px; }
+  .nav-dropdown { min-width: 130px; }
+}
 .nav-dropdown {
   position: relative;
   min-width: 190px;

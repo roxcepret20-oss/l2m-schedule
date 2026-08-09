@@ -3,6 +3,11 @@ class BossVoice {
     this.synth = null;
     this.voices = [];
     this._initialized = false;
+    this.volume = 1;
+  }
+
+  setVolume(volume) {
+    this.volume = Math.min(1, Math.max(0, volume));
   }
 
   init() {
@@ -36,6 +41,7 @@ class BossVoice {
     const msg = new SpeechSynthesisUtterance(text);
     const voice = this.getVoice();
     if (voice) msg.voice = voice;
+    msg.volume = this.volume;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(msg);
   }
