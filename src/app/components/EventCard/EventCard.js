@@ -72,8 +72,19 @@ export default function EventCard({ event }) {
     }
   }, [remaining, event.name, isVisible]);
 
+  const handleClick = () => {
+    if (event.link) {
+      window.open(event.link, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
-    <div className={`card-container ${styles.event_card}`} aria-live="polite">
+    <div
+      className={`card-container ${styles.event_card}`}
+      aria-live="polite"
+      onClick={event.link ? handleClick : undefined}
+      style={event.link ? { cursor: "pointer" } : undefined}
+    >
       <span className={styles.event_badge}>Event</span>
       <div className="card-boss-name">{event.name}</div>
       <div className="card-detail">Time: {event.spawn_time ?? "—"}</div>

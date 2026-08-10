@@ -83,11 +83,21 @@ export default function NokaEventCard({ event }) {
     ? (Array.isArray(event.points) ? event.points : [event.points])
     : null;
 
+  const handleClick = () => {
+    if (event.link) {
+      window.open(event.link, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div
       className={styles.noka_event_container}
-      style={{ backgroundImage: "url('/noka_theme/ffa.png')" }}
+      style={{
+        backgroundImage: "url('/noka_theme/ffa.png')",
+        ...(event.link ? { cursor: "pointer" } : {}),
+      }}
       aria-live="polite"
+      onClick={event.link ? handleClick : undefined}
     >
       <div className={styles.noka_event_content}>
         <span className={styles.event_badge}>Event</span>
