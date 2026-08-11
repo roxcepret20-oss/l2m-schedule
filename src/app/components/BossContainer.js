@@ -77,17 +77,31 @@ function computeEventSpawnTime(timeStr, tzOffset = 0) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+// places is keyed by day-of-week ("0".."6", Monday=0) with an array of place
+// names indexed by the event's current rotation number.
+function resolveEventPlace(e, today) {
+  const places = e.time?.places;
+  if (!places) return null;
+  const arr = places[String(today)];
+  if (!Array.isArray(arr)) return null;
+  return arr[e.rotation] ?? null;
+}
+
 function processEvents(events, tzOffset = 0) {
   const today = toEventDayIndex(new Date().getDay());
   return events
     .filter(e => e.is_active && Array.isArray(e.time?.days) && e.time.days.includes(today))
-    .map(e => ({
-      ...e,
-      _type: "event",
-      spawn_time: computeEventSpawnTime(e.time.time, tzOffset),
-      points: e.time.points ?? null,
-      link: e.link ?? e.time.link ?? null,
-    }));
+    .map(e => {
+      const place = resolveEventPlace(e, today);
+      return {
+        ...e,
+        _type: "event",
+        name: place ? `${e.name} - ${place}` : e.name,
+        spawn_time: computeEventSpawnTime(e.time.time, tzOffset),
+        points: e.time.points ?? null,
+        link: e.link ?? e.time.link ?? null,
+      };
+    });
 }
 
 function withSpawnSorted(list, tzOffset = 0) {
