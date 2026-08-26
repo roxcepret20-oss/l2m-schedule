@@ -46,7 +46,8 @@ function computeSpawnTime(kill_time, interval, tzOffset = 0) {
   }
   if (!d) return null;
   const hrs = Number(interval);
-  if (isFinite(hrs) && hrs > 0) d.setHours(d.getHours() + hrs + tzOffset);
+  // interval may be fractional (e.g. 2.5 = 2h30m), so add via minutes to avoid truncation
+  if (isFinite(hrs) && hrs > 0) d.setMinutes(d.getMinutes() + Math.round((hrs + tzOffset) * 60));
   return d;
 }
 
