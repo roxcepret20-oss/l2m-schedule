@@ -51,9 +51,34 @@ function computeEventSpawnDate(timeStr, tzOffset = 0) {
 
 function tagForBoss(boss) {
   if (boss.type === "invasion") return "INVASION";
-  if (boss.category === "ffa") return "FFA";
-  if (boss.category === "red") return "RED";
   return null;
+}
+
+// Ported from BossCard.js's getPointsInfo so the pipeline page shows the
+// exact same points a boss would award on the boss list (same category,
+// day-of-week/hour, and ffaMode rules).
+function getBossPoints(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
+  const cat = boss.category;
+  if (cat !== "ffa" && cat !== "red") return null;
+  if (boss.name === "Maluk") return 50;
+
+  const baseDate = spawnDate ?? new Date();
+  const wibMs = baseDate.getTime()
+    + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
+    - tzOffset * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const day = wibDate.getDay();
+  const hour = wibDate.getHours();
+
+  if (ffaMode !== "PEACE" && [1, 3, 5].includes(day) && hour >= 8) return 3;
+  if (ffaMode === "WAR") return hour < 8 ? 2 : 3;
+  return hour < 6 ? 2 : 1;
+}
+
+function normalizePoints(rawPoints) {
+  if (rawPoints == null) return null;
+  const arr = Array.isArray(rawPoints) ? rawPoints : [rawPoints];
+  return arr.length > 0 ? arr : null;
 }
 
 /**
@@ -61,7 +86,7 @@ function tagForBoss(boss) {
  * chronologically-sorted list of timeline items, each with a resolved
  * `spawnDate` (Date) usable for chaining/countdowns.
  */
-export function buildPipelineItems(bosses = [], events = [], tzOffset = 0) {
+export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL") {
   const safeBosses = Array.isArray(bosses) ? bosses : [];
   const safeEvents = Array.isArray(events) ? events : [];
   const now = Date.now();
@@ -81,6 +106,7 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0) {
         category: b.category,
         type: b.type,
         tag: tagForBoss(b),
+        points: normalizePoints(getBossPoints(b, ffaMode, spawnDate, tzOffset)),
         spawnDate,
         raw: b,
       };
@@ -98,6 +124,7 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0) {
         category: null,
         type: null,
         tag: "EVENT",
+        points: normalizePoints(e.time?.points ?? null),
         spawnDate,
         raw: e,
       };

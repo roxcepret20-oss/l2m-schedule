@@ -112,7 +112,7 @@
 .timeline::before {
   content: "";
   position: absolute;
-  left: 29px;
+  left: 26px;
   top: 8px;
   bottom: 8px;
   width: 2px;
@@ -185,12 +185,33 @@
   letter-spacing: 0.2px;
 }
 
-.tag_ffa {
-  background: #059669;
+.ptsBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 5px;
+  color: #fff;
+  letter-spacing: 0.2px;
 }
 
-.tag_red {
-  background: #D97706;
+.pts_1 {
+  background: linear-gradient(135deg, #059669, #10B981);
+}
+
+.pts_2 {
+  background: linear-gradient(135deg, #D97706, #F59E0B);
+}
+
+.pts_3 {
+  background: linear-gradient(135deg, #DC2626, #EF4444);
+}
+
+.pts_5 {
+  background: linear-gradient(135deg, #DC2626, #EF4444);
+}
+
+.pts_50 {
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
 }
 
 .tag_invasion {

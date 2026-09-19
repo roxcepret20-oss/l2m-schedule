@@ -111,27 +111,6 @@ html,body {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-.nav-link-btn {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card-bg) 96%, transparent), var(--card-bg));
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 700;
-  padding: 9px 14px;
-  outline: none;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--text) 8%, transparent);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-.nav-link-btn:hover {
-  transform: translateY(-1px);
-}
-.nav-link-btn:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-}
 .nav-dropdown-caret {
   font-size: 12px;
   color: var(--muted);
@@ -443,7 +422,7 @@ html,body {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root, [data-theme="dark"] {
+  :root:not([data-theme="light"]), [data-theme="dark"] {
     --main-bg: #0b1220;
     --card-bg: #0f1724;
     --navbar-bg: rgba(255,255,255,0.02);

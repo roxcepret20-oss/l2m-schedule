@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import PipelineCard from "./PipelineCard";
 import { buildPipelineItems, groupIntoPipelines } from "@/lib/pipelineGrouping";
 import styles from "./Pipeline.module.css";
 
-export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0 }) {
+export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL" }) {
   const [now, setNow] = useState(() => Date.now());
-  const [items, setItems] = useState(() => buildPipelineItems(bosses, events, tzOffset));
+  const [items, setItems] = useState(() => buildPipelineItems(bosses, events, tzOffset, ffaMode));
 
-  // rebuild the full timeline whenever the source data or timezone changes
+  // rebuild the full timeline whenever the source data, timezone, or ffaMode changes
   useEffect(() => {
-    setItems(buildPipelineItems(bosses, events, tzOffset));
-  }, [bosses, events, tzOffset]);
+    setItems(buildPipelineItems(bosses, events, tzOffset, ffaMode));
+  }, [bosses, events, tzOffset, ffaMode]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -34,22 +33,16 @@ export default function PipelineContainer({ bosses = [], events = [], tzOffset =
     return <div className={styles.emptyState}>No upcoming bosses or events right now.</div>;
   }
 
+  // Plain divs (no framer-motion) so pipeline cards always render reliably.
+  // Groups can regroup (merge/split) whenever the timezone or underlying
+  // data changes, which changes group identities wholesale — a
+  // framer-motion AnimatePresence/exit setup here got stuck mid-animation
+  // and left stale cards on screen instead of removing them.
   return (
     <div className={styles.pipelineList}>
-      <AnimatePresence>
-        {groups.map((group, index) => (
-          <motion.div
-            key={group.id}
-            layout
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, layout: { duration: 0.35, ease: "easeOut" } }}
-          >
-            <PipelineCard group={group} now={now} isNextUp={index === 0} />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {groups.map((group, index) => (
+        <PipelineCard key={group.id} group={group} now={now} isNextUp={index === 0} />
+      ))}
     </div>
   );
 }

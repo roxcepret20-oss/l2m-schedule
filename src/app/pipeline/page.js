@@ -19,6 +19,7 @@ const TIMEZONES = [
 export default function PipelinePage() {
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
+  const [ffaDays, setFfaDays] = useState(null);
   const [tzKey, setTzKey] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("tzKey") || "WIB";
@@ -41,6 +42,13 @@ export default function PipelinePage() {
         .catch(() => { if (mounted) setEvents([]); });
     };
 
+    const fetchFfaDays = () => {
+      fetch("/api/ffa-day")
+        .then((res) => res.json())
+        .then((data) => { if (mounted) setFfaDays(data); })
+        .catch(() => { if (mounted) setFfaDays(null); });
+    };
+
     const fetchBosses = () => {
       fetch("/api/bosses")
         .then((res) => res.json())
@@ -49,14 +57,16 @@ export default function PipelinePage() {
     };
 
     fetchEvents();
+    fetchFfaDays();
     fetchBosses();
     const interval = setInterval(fetchBosses, 2 * 60 * 60 * 1000);
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  if (!bosses || !events) return <Loader />;
+  if (!bosses || !events || !ffaDays) return <Loader />;
 
   const tzOffset = TIMEZONES.find((t) => t.key === tzKey)?.offset ?? 0;
+  const ffaMode = ffaDays?.is_ffa ?? "NORMAL";
 
   return (
     <div>
@@ -77,7 +87,7 @@ export default function PipelinePage() {
         <h1>Boss Pipelines</h1>
         <p>Bosses &amp; events grouped by spawn-time chains</p>
       </div>
-      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} />
+      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} />
     </div>
   );
 }

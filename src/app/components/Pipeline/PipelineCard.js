@@ -3,6 +3,14 @@
 import { formatCountdown, formatSpawnDisplay, getCountdownUrgency } from "@/lib/pipelineGrouping";
 import styles from "./Pipeline.module.css";
 
+function pointsBadgeClass(points) {
+  if (points >= 50) return styles.pts_50;
+  if (points >= 5) return styles.pts_5;
+  if (points === 3) return styles.pts_3;
+  if (points === 2) return styles.pts_2;
+  return styles.pts_1;
+}
+
 export default function PipelineCard({ group, now, isNextUp }) {
   const startRemaining = group.start.getTime() - now;
   const badgeLabel = group.isSingle ? "SINGLE" : isNextUp ? "NEXT UP" : "CHAIN";
@@ -44,6 +52,9 @@ export default function PipelineCard({ group, now, isNextUp }) {
                   {item.tag && (
                     <span className={`${styles.tag} ${styles[`tag_${item.tag.toLowerCase()}`]}`}>{item.tag}</span>
                   )}
+                  {item.points && item.points.map((pts, i) => (
+                    <span key={i} className={`${styles.ptsBadge} ${pointsBadgeClass(pts)}`}>{pts} pts</span>
+                  ))}
                 </div>
                 <div className={styles.itemTime}>{formatSpawnDisplay(item.spawnDate)}</div>
               </div>
