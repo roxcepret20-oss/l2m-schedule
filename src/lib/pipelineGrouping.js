@@ -153,12 +153,16 @@ export function groupIntoPipelines(items, gapMs = PIPELINE_GAP_MS) {
     }
   }
 
-  return groups.map((group, index) => {
+  return groups.map((group) => {
     const start = group.items[0].spawnDate;
     const end = group.items[group.items.length - 1].spawnDate;
     const spanMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
     return {
-      id: `pipeline-${index}-${start.getTime()}`,
+      // Derived from the first item's own id + start time (not array index)
+      // so a group's identity stays stable across re-renders even when
+      // earlier groups expire and shift everyone else's position. This keeps
+      // voice-alert "already played" tracking (keyed by group.id) correct.
+      id: `pipeline-${group.items[0].id}-${start.getTime()}`,
       items: group.items,
       start,
       end,

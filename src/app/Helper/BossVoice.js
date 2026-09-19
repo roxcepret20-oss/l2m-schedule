@@ -45,6 +45,20 @@ class BossVoice {
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(msg);
   }
+
+  // Used by the /pipeline page to announce that a boss chain (a run of
+  // spawns close together in time) is about to start.
+  speakChainAlert(spawnCount) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    this.init();
+    const text = `Boss chain incoming in 5 minutes, ${spawnCount} spawns queued, let's go!`;
+    const msg = new SpeechSynthesisUtterance(text);
+    const voice = this.getVoice();
+    if (voice) msg.voice = voice;
+    msg.volume = this.volume;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(msg);
+  }
 }
 
 export default new BossVoice();
