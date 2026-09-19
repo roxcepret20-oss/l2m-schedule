@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
 import VolumeSlider from "./VolumeSlider";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/featureFlags";
@@ -9,6 +9,8 @@ import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/feature
 export default function Navbar() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const isPipelineRoute = pathname === "/pipeline";
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -54,44 +56,53 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="logo">Shatter Company</div>
       <div className="nav-items">
-        <div className="nav-dropdown" ref={menuRef}>
-          <button
-            type="button"
-            className="nav-dropdown-trigger"
-            aria-haspopup="menu"
-            aria-expanded={isOpen}
-            onClick={() => setIsOpen((prev) => !prev)}
-          >
-            <span>{selectedOption.label}</span>
-            <span className={`nav-dropdown-caret ${isOpen ? "open" : ""}`} aria-hidden="true">▾</span>
-          </button>
+        {!isPipelineRoute && (
+          <div className="nav-dropdown" ref={menuRef}>
+            <button
+              type="button"
+              className="nav-dropdown-trigger"
+              aria-haspopup="menu"
+              aria-expanded={isOpen}
+              onClick={() => setIsOpen((prev) => !prev)}
+            >
+              <span>{selectedOption.label}</span>
+              <span className={`nav-dropdown-caret ${isOpen ? "open" : ""}`} aria-hidden="true">▾</span>
+            </button>
 
-          {isOpen && (
-            <div className="nav-dropdown-menu" role="menu" aria-label="Navigate to boss list">
-              {navOptions.map((option) => {
-                const active = option.value === selectedValue;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={active}
-                    className={`nav-dropdown-item ${active ? "active" : ""}`}
-                    onClick={() => {
-                      setIsOpen(false);
-                      router.push(option.href);
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+            {isOpen && (
+              <div className="nav-dropdown-menu" role="menu" aria-label="Navigate to boss list">
+                {navOptions.map((option) => {
+                  const active = option.value === selectedValue;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={active}
+                      className={`nav-dropdown-item ${active ? "active" : ""}`}
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push(option.href);
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          className="nav-link-btn"
+          onClick={() => router.push(isPipelineRoute ? "/" : "/pipeline")}
+        >
+          {isPipelineRoute ? "Boss List" : "Pipeline"}
+        </button>
       </div>
        <VolumeSlider />
-       <ThemeToggle />
+       {!isPipelineRoute && <ThemeToggle />}
     </nav>
   );
 }
