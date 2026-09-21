@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PipelineContainer from "../components/Pipeline/PipelineContainer";
 import Loader from "../components/ClientSideLoader";
 import styles from "../components/Pipeline/Pipeline.module.css";
@@ -17,6 +18,7 @@ const TIMEZONES = [
 ];
 
 export default function PipelinePage() {
+  const searchParams = useSearchParams();
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
@@ -67,6 +69,7 @@ export default function PipelinePage() {
 
   const tzOffset = TIMEZONES.find((t) => t.key === tzKey)?.offset ?? 0;
   const ffaMode = ffaDays?.is_ffa ?? "NORMAL";
+  const view = searchParams.get("view") || "all";
 
   return (
     <div>
@@ -87,7 +90,7 @@ export default function PipelinePage() {
         <h1>Boss Pipelines</h1>
         <p>Bosses &amp; events grouped by spawn-time chains</p>
       </div>
-      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} />
+      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} />
     </div>
   );
 }

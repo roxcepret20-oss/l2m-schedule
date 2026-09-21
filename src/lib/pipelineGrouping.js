@@ -136,6 +136,20 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMo
 }
 
 /**
+ * Applies the /pipeline page's `?view=` query param filter to a
+ * chronologically-sorted list of timeline items. Must run before
+ * `groupIntoPipelines` so chains are re-derived from the surviving items
+ * (a filtered-out boss can split, shrink, or remove a chain entirely).
+ *
+ * `view === "points-only"` hides bosses that don't award points; events are
+ * never filtered by this, regardless of points.
+ */
+export function filterPipelineItems(items, view = "all") {
+  if (view !== "points-only") return items;
+  return items.filter((item) => item._type !== "boss" || (item.points && item.points.length > 0));
+}
+
+/**
  * Splits a chronologically-sorted list of timeline items into pipelines
  * (chains): a new pipeline starts whenever the gap to the previous item's
  * spawn exceeds `gapMs`.

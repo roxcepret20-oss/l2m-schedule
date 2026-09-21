@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import PipelineCard from "./PipelineCard";
-import { buildPipelineItems, groupIntoPipelines } from "@/lib/pipelineGrouping";
+import { buildPipelineItems, filterPipelineItems, groupIntoPipelines } from "@/lib/pipelineGrouping";
 import bossVoice from "../../Helper/BossVoice";
 import eventVoice from "../../Helper/EventVoice";
 import styles from "./Pipeline.module.css";
@@ -11,9 +11,9 @@ const FIVE_MIN_MS = 5 * 60 * 1000;
 const ONE_MIN_MS = 60 * 1000;
 const LATE_TOLERANCE_MS = 10 * 1000; // matches BossCard/EventCard's alert windows
 
-export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL" }) {
+export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", view = "all" }) {
   const [now, setNow] = useState(() => Date.now());
-  const [items, setItems] = useState(() => buildPipelineItems(bosses, events, tzOffset, ffaMode));
+  const [items, setItems] = useState(() => filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode), view));
 
   // per-item and per-chain "already announced" trackers, keyed by item.id /
   // group.id. Each entry also remembers the spawnDate/start it was recorded
@@ -23,10 +23,11 @@ export default function PipelineContainer({ bosses = [], events = [], tzOffset =
   const eventAlertsRef = useRef(new Map());
   const chainAlertsRef = useRef(new Map());
 
-  // rebuild the full timeline whenever the source data, timezone, or ffaMode changes
+  // rebuild the full timeline whenever the source data, timezone, ffaMode, or
+  // view filter changes
   useEffect(() => {
-    setItems(buildPipelineItems(bosses, events, tzOffset, ffaMode));
-  }, [bosses, events, tzOffset, ffaMode]);
+    setItems(filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode), view));
+  }, [bosses, events, tzOffset, ffaMode, view]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
