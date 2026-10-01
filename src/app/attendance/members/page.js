@@ -8,15 +8,20 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"
 
 const EMPTY_INFO_FORM = {
   ign: "",
-  activity_coin: "",
+  real_ign: "",
+  image_url: "",
   clan_id: "",
-  latest_grade: "",
 };
 
 function toLabel(stat_name) {
   return stat_name
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getImageUrl(imageUrl) {
+  if (!imageUrl) return "";
+  return imageUrl.startsWith("http") ? imageUrl : `${API_BASE}${imageUrl}`;
 }
 
 function buildEmptyStats(statFields) {
@@ -30,9 +35,9 @@ function buildEmptyForm(statFields) {
 function memberToForm(m, statFields) {
   return {
     ign: m.ign ?? "",
-    activity_coin: m.activity_coin ?? "",
+    real_ign: m.real_ign ?? "",
+    image_url: m.image_url ?? "",
     clan_id: m.clan_id ?? "",
-    latest_grade: m.latest_grade ?? "",
     stats: Object.fromEntries(
       statFields.map((f) => [f.name, m.stats?.[f.name] ?? ""])
     ),
@@ -54,16 +59,18 @@ export default function MembersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_INFO_FORM, stats: {} });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
 
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  function getHeaders() {
+  function getHeaders(includeJson = true) {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
     return {
-      "Content-Type": "application/json",
+      ...(includeJson ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   }
@@ -114,6 +121,8 @@ export default function MembersPage() {
   function openAdd() {
     setEditingMember(null);
     setForm(buildEmptyForm(statFields));
+    setImageFile(null);
+    setImagePreview("");
     setFormError("");
     setModalOpen(true);
   }
@@ -121,6 +130,8 @@ export default function MembersPage() {
   function openEdit(member) {
     setEditingMember(member);
     setForm(memberToForm(member, statFields));
+    setImageFile(null);
+    setImagePreview(getImageUrl(member.image_url));
     setFormError("");
     setModalOpen(true);
   }
@@ -128,6 +139,8 @@ export default function MembersPage() {
   function closeModal() {
     setModalOpen(false);
     setEditingMember(null);
+    setImageFile(null);
+    setImagePreview("");
     setFormError("");
   }
 
@@ -141,25 +154,30 @@ export default function MembersPage() {
     setForm((f) => ({ ...f, stats: { ...f.stats, [name]: value } }));
   }
 
+  function handleImageChange(e) {
+    const file = e.target.files?.[0] ?? null;
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : "");
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setFormLoading(true);
     setFormError("");
 
-    const payload = {
-      ign: form.ign.trim(),
-      activity_coin: form.activity_coin !== "" ? toNum(form.activity_coin) : null,
-      clan_id: form.clan_id !== "" ? Number(form.clan_id) : null,
-      latest_grade: form.latest_grade || null,
-      stats: Object.fromEntries(
-        statFields.map(({ name }) => [
-          name,
-          form.stats[name] !== undefined && form.stats[name] !== ""
-            ? toNum(form.stats[name])
-            : null,
-        ])
-      ),
-    };
+    const payload = new FormData();
+    payload.append("ign", form.ign.trim());
+    payload.append("real_ign", form.real_ign.trim());
+    payload.append("clan_id", form.clan_id !== "" ? form.clan_id : "");
+    payload.append("stats", JSON.stringify(Object.fromEntries(
+      statFields.map(({ name }) => [
+        name,
+        form.stats[name] !== undefined && form.stats[name] !== ""
+          ? toNum(form.stats[name])
+          : null,
+      ])
+    )));
+    if (imageFile) payload.append("image", imageFile);
 
     const isEdit = editingMember !== null;
     const url = isEdit
@@ -170,8 +188,8 @@ export default function MembersPage() {
     try {
       const res = await fetch(url, {
         method,
-        headers: getHeaders(),
-        body: JSON.stringify(payload),
+        headers: getHeaders(false),
+        body: payload,
       });
       const data = await res.json();
       if (res.ok) {
@@ -236,9 +254,9 @@ export default function MembersPage() {
               <thead>
                 <tr>
                   <th>IGN</th>
+                  <th>Real IGN</th>
                   <th>Clan</th>
-                  <th>Activity Coin</th>
-                  <th>Grade</th>
+                  <th>Gear Proof</th>
                   <th>Level</th>
                   <th>Class</th>
                   <th>Actions</th>
@@ -252,15 +270,9 @@ export default function MembersPage() {
                         {m.ign}
                       </Link>
                     </td>
+                    <td>{m.real_ign || <span className={styles.muted}>—</span>}</td>
                     <td>{m.clan_name}</td>
-                    <td>{m.activity_coin ?? "—"}</td>
-                    <td>
-                      {m.latest_grade ? (
-                        <span className={styles.gradeBadge}>{m.latest_grade}</span>
-                      ) : (
-                        <span className={styles.muted}>—</span>
-                      )}
-                    </td>
+                    <td>{m.image_url ? "Available" : <span className={styles.muted}>—</span>}</td>
                     <td>{m.stats?.level ?? "—"}</td>
                     <td>{m.stats?.class ?? "—"}</td>
                     <td>
@@ -338,29 +350,30 @@ export default function MembersPage() {
                     />
                   </div>
 
-                  <div className={styles.formField}>
-                    <label className={styles.label}>Activity Coin</label>
+                  <div className={`${styles.formField} ${styles.fullWidth}`}>
+                    <label className={styles.label}>Real IGN</label>
                     <input
-                      type="number"
-                      name="activity_coin"
+                      type="text"
+                      name="real_ign"
                       className={styles.input}
-                      placeholder="0"
-                      value={form.activity_coin}
+                      placeholder="Real player name"
+                      value={form.real_ign}
                       onChange={handleInfoChange}
-                      min="0"
                     />
                   </div>
 
-                  <div className={styles.formField}>
-                    <label className={styles.label}>Latest Grade</label>
+                  <div className={`${styles.formField} ${styles.fullWidth}`}>
+                    <label className={styles.label}>Image URL</label>
                     <input
-                      type="text"
-                      name="latest_grade"
+                      type="file"
+                      name="image"
                       className={styles.input}
-                      placeholder="e.g. S, A, B, C"
-                      value={form.latest_grade}
-                      onChange={handleInfoChange}
+                      accept="image/*"
+                      onChange={handleImageChange}
                     />
+                    {imagePreview && (
+                      <img className={styles.imagePreview} src={imagePreview} alt="Gear proof preview" />
+                    )}
                   </div>
 
                   <div className={`${styles.formField} ${styles.fullWidth}`}>

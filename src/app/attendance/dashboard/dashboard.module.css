@@ -343,6 +343,66 @@
   color: var(--muted);
 }
 
+.membersCard {
+  margin-top: 20px;
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+
+.membersTitle {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.memberTableWrapper {
+  overflow-x: auto;
+}
+
+.memberTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.memberTable th {
+  padding: 10px 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.memberTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.memberTable tr:last-child td {
+  border-bottom: none;
+}
+
+.scoreColumn {
+  text-align: right !important;
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.errorText {
+  margin: 0;
+  color: #ef4444;
+  font-size: 14px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .sidebar {

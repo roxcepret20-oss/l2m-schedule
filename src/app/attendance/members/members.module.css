@@ -87,18 +87,6 @@
   opacity: 0.75;
 }
 
-.gradeBadge {
-  display: inline-block;
-  padding: 2px 10px;
-  background: var(--invasion-bg);
-  color: var(--accent);
-  border: 1px solid var(--invasion-border);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-
 /* ── Row actions ── */
 .actions {
   display: flex;
@@ -337,6 +325,15 @@
 
 .input:focus {
   border-color: var(--accent);
+}
+
+.imagePreview {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  margin-top: 8px;
+  border-radius: 8px;
+  object-fit: contain;
 }
 
 .modalActions {

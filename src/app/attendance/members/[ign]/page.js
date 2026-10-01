@@ -7,6 +7,11 @@ import styles from "./member-detail.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
+function getImageUrl(imageUrl) {
+  if (!imageUrl) return "";
+  return imageUrl.startsWith("http") ? imageUrl : `${API_BASE}${imageUrl}`;
+}
+
 function getHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   return {
@@ -116,25 +121,15 @@ export default function MemberDetailPage() {
                 <span className={styles.infoValue}>{member.ign}</span>
               </div>
               <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Real IGN</span>
+                <span className={styles.infoValue}>
+                  {member.real_ign ?? <span className={styles.muted}>—</span>}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Clan</span>
                 <span className={styles.infoValue}>
                   {member.clan_name ?? <span className={styles.muted}>—</span>}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Activity Coin</span>
-                <span className={styles.infoValue}>
-                  {member.activity_coin ?? <span className={styles.muted}>—</span>}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Latest Grade</span>
-                <span className={styles.infoValue}>
-                  {member.latest_grade ? (
-                    <span className={styles.gradeBadge}>{member.latest_grade}</span>
-                  ) : (
-                    <span className={styles.muted}>—</span>
-                  )}
                 </span>
               </div>
             </div>
@@ -175,6 +170,15 @@ export default function MemberDetailPage() {
               </table>
             )}
           </div>
+
+          {member.image_url && (
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Gear Proof</h2>
+              <a href={getImageUrl(member.image_url)} target="_blank" rel="noreferrer">
+                <img className={styles.proofImage} src={getImageUrl(member.image_url)} alt={`${member.ign} gear proof`} />
+              </a>
+            </div>
+          )}
         </>
       )}
     </div>
