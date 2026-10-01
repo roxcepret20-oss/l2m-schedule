@@ -5,6 +5,7 @@ import styles from "./Pipeline.module.css";
 
 function pointsBadgeClass(points) {
   if (points >= 50) return styles.pts_50;
+  if (points === 10) return styles.pts_10;
   if (points >= 5) return styles.pts_5;
   if (points === 3) return styles.pts_3;
   if (points === 2) return styles.pts_2;

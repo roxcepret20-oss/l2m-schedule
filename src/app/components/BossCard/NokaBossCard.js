@@ -65,27 +65,18 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
 
-  if (ffaMode === "WAR") {
-    return { points: 5, label: cat };
-  }
+  // Maluk never awards points.
+  if (boss.name === "Maluk") return null;
 
-  if (ffaMode === "PEACE") {
-    return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
-  }
+  const baseDate = spawnDate ?? new Date();
+  const wibMs = baseDate.getTime()
+    + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
+    - tzOffset * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const hour = wibDate.getHours();
 
-  if (spawnDate) {
-    const wibMs = spawnDate.getTime()
-      + (7 * 60 + spawnDate.getTimezoneOffset()) * 60 * 1000
-      - tzOffset * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const day = wibDate.getDay();
-    const hour = wibDate.getHours();
-    if ([1, 3, 5].includes(day) && hour >= 8) {
-      return { points: 5, label: cat };
-    }
-  }
-
-  return cat === "ffa" ? { points: 3, label: "ffa" } : { points: 1, label: "red" };
+  // Flat time-based rule, regardless of day/ffaMode: 00:00-08:00 => 10 pts, 08:01-23:59 => 3 pts.
+  return { points: hour < 8 ? 10 : 3, label: cat };
 }
 
 export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {

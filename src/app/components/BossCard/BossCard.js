@@ -49,29 +49,18 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
 
-  if (boss.name === "Maluk") {
-    return { points: 50, label: cat };
-  }
+  // Maluk never awards points.
+  if (boss.name === "Maluk") return null;
 
   const baseDate = spawnDate ?? new Date();
   const wibMs = baseDate.getTime()
     + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
     - tzOffset * 60 * 60 * 1000;
   const wibDate = new Date(wibMs);
-  const day = wibDate.getDay();
   const hour = wibDate.getHours();
 
-  // Monday/Wednesday/Friday 08:00-24:00 => 3 points, except in PEACE mode.
-  if (ffaMode !== "PEACE" && [1, 3, 5].includes(day) && hour >= 8) {
-    return { points: 3, label: cat };
-  }
-
-  if (ffaMode === "WAR") {
-    return { points: hour < 8 ? 2 : 3, label: cat };
-  }
-
-  // NORMAL and PEACE share the same time-based points.
-  return { points: hour < 6 ? 2 : 1, label: cat };
+  // Flat time-based rule, regardless of day/ffaMode: 00:00-08:00 => 10 pts, 08:01-23:59 => 3 pts.
+  return { points: hour < 8 ? 10 : 3, label: cat };
 }
 
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {

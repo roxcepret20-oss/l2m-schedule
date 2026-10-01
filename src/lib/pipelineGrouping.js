@@ -55,24 +55,20 @@ function tagForBoss(boss) {
 }
 
 // Ported from BossCard.js's getPointsInfo so the pipeline page shows the
-// exact same points a boss would award on the boss list (same category,
-// day-of-week/hour, and ffaMode rules).
+// exact same points a boss would award on the boss list (same category and hour).
 function getBossPoints(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
-  if (boss.name === "Maluk") return 50;
 
   const baseDate = spawnDate ?? new Date();
   const wibMs = baseDate.getTime()
     + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
     - tzOffset * 60 * 60 * 1000;
   const wibDate = new Date(wibMs);
-  const day = wibDate.getDay();
   const hour = wibDate.getHours();
 
-  if (ffaMode !== "PEACE" && [1, 3, 5].includes(day) && hour >= 8) return 3;
-  if (ffaMode === "WAR") return hour < 8 ? 2 : 3;
-  return hour < 6 ? 2 : 1;
+  // Flat time-based rule, regardless of day/ffaMode: 00:00-08:00 => 10 pts, 08:01-23:59 => 3 pts.
+  return hour < 8 ? 10 : 3;
 }
 
 function normalizePoints(rawPoints) {

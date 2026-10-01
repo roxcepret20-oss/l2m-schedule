@@ -210,6 +210,11 @@
   background: linear-gradient(135deg, #DC2626, #EF4444);
 }
 
+.pts_10 {
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.5);
+}
+
 .pts_50 {
   background: linear-gradient(135deg, #7C3AED, #A855F7);
 }
