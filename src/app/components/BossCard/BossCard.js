@@ -49,9 +49,6 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
 
-  // Maluk never awards points.
-  if (boss.name === "Maluk") return null;
-
   const baseDate = spawnDate ?? new Date();
   const wibMs = baseDate.getTime()
     + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000

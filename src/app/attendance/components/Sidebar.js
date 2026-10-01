@@ -14,6 +14,7 @@ const MENU_ITEMS = [
 const SETTINGS_SUB_ITEMS = [
   { href: "/attendance/settings/gear_score_formula", label: "Gear Score Formula" },
   { href: "/attendance/settings/admins", label: "Admins" },
+  { href: "/attendance/settings/users", label: "Users" },
 ];
 
 const ICONS = {

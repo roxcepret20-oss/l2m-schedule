@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import VolumeSlider from "./VolumeSlider";
 
@@ -77,6 +78,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
+       <Link href="/users" className="nav-profile-link">My Profile</Link>
        <VolumeSlider />
        <ThemeToggle />
     </nav>

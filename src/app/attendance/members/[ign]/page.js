@@ -7,6 +7,13 @@ import styles from "./member-detail.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
+const GEAR_PROOF_FIELDS = [
+  { name: "stats_image", label: "Stats" },
+  { name: "soulshot_image", label: "Soulshot" },
+  { name: "valor_image", label: "Valor" },
+  { name: "guardian_image", label: "Guardian" },
+];
+
 function getImageUrl(imageUrl) {
   if (!imageUrl) return "";
   return imageUrl.startsWith("http") ? imageUrl : `${API_BASE}${imageUrl}`;
@@ -105,6 +112,9 @@ export default function MemberDetailPage() {
             <p className={styles.subtitle}>Member detail</p>
           </div>
         )}
+        <Link href="/users" className={styles.backLink}>
+          Manage My Profile →
+        </Link>
       </div>
 
       {loading && <p className={styles.muted}>Loading…</p>}
@@ -171,12 +181,23 @@ export default function MemberDetailPage() {
             )}
           </div>
 
-          {member.image_url && (
+          {GEAR_PROOF_FIELDS.some(({ name }) => member[name]) && (
             <div className={styles.card}>
               <h2 className={styles.sectionTitle}>Gear Proof</h2>
-              <a href={getImageUrl(member.image_url)} target="_blank" rel="noreferrer">
-                <img className={styles.proofImage} src={getImageUrl(member.image_url)} alt={`${member.ign} gear proof`} />
-              </a>
+              <div className={styles.proofGrid}>
+                {GEAR_PROOF_FIELDS.filter(({ name }) => member[name]).map(({ name, label }) => (
+                  <div className={styles.proofItem} key={name}>
+                    <span className={styles.infoLabel}>{label}</span>
+                    <a href={getImageUrl(member[name])} target="_blank" rel="noreferrer">
+                      <img
+                        className={styles.proofImage}
+                        src={getImageUrl(member[name])}
+                        alt={`${member.ign} ${label} gear proof`}
+                      />
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </>

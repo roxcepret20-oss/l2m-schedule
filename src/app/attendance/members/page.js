@@ -9,9 +9,15 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"
 const EMPTY_INFO_FORM = {
   ign: "",
   real_ign: "",
-  image_url: "",
   clan_id: "",
 };
+
+const GEAR_PROOF_FIELDS = [
+  { name: "stats_image", label: "Stats" },
+  { name: "soulshot_image", label: "Soulshot" },
+  { name: "valor_image", label: "Valor" },
+  { name: "guardian_image", label: "Guardian" },
+];
 
 function toLabel(stat_name) {
   return stat_name
@@ -32,11 +38,14 @@ function buildEmptyForm(statFields) {
   return { ...EMPTY_INFO_FORM, stats: buildEmptyStats(statFields) };
 }
 
+function emptyGearProofPreviews() {
+  return Object.fromEntries(GEAR_PROOF_FIELDS.map(({ name }) => [name, ""]));
+}
+
 function memberToForm(m, statFields) {
   return {
     ign: m.ign ?? "",
     real_ign: m.real_ign ?? "",
-    image_url: m.image_url ?? "",
     clan_id: m.clan_id ?? "",
     stats: Object.fromEntries(
       statFields.map((f) => [f.name, m.stats?.[f.name] ?? ""])
@@ -59,8 +68,8 @@ export default function MembersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_INFO_FORM, stats: {} });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imageFiles, setImageFiles] = useState({});
+  const [imagePreviews, setImagePreviews] = useState(emptyGearProofPreviews());
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -121,8 +130,8 @@ export default function MembersPage() {
   function openAdd() {
     setEditingMember(null);
     setForm(buildEmptyForm(statFields));
-    setImageFile(null);
-    setImagePreview("");
+    setImageFiles({});
+    setImagePreviews(emptyGearProofPreviews());
     setFormError("");
     setModalOpen(true);
   }
@@ -130,8 +139,12 @@ export default function MembersPage() {
   function openEdit(member) {
     setEditingMember(member);
     setForm(memberToForm(member, statFields));
-    setImageFile(null);
-    setImagePreview(getImageUrl(member.image_url));
+    setImageFiles({});
+    setImagePreviews(
+      Object.fromEntries(
+        GEAR_PROOF_FIELDS.map(({ name }) => [name, getImageUrl(member[name])])
+      )
+    );
     setFormError("");
     setModalOpen(true);
   }
@@ -139,8 +152,8 @@ export default function MembersPage() {
   function closeModal() {
     setModalOpen(false);
     setEditingMember(null);
-    setImageFile(null);
-    setImagePreview("");
+    setImageFiles({});
+    setImagePreviews(emptyGearProofPreviews());
     setFormError("");
   }
 
@@ -154,10 +167,10 @@ export default function MembersPage() {
     setForm((f) => ({ ...f, stats: { ...f.stats, [name]: value } }));
   }
 
-  function handleImageChange(e) {
+  function handleImageChange(field, e) {
     const file = e.target.files?.[0] ?? null;
-    setImageFile(file);
-    setImagePreview(file ? URL.createObjectURL(file) : "");
+    setImageFiles((f) => ({ ...f, [field]: file }));
+    setImagePreviews((p) => ({ ...p, [field]: file ? URL.createObjectURL(file) : "" }));
   }
 
   async function handleSubmit(e) {
@@ -177,7 +190,9 @@ export default function MembersPage() {
           : null,
       ])
     )));
-    if (imageFile) payload.append("image", imageFile);
+    GEAR_PROOF_FIELDS.forEach(({ name }) => {
+      if (imageFiles[name]) payload.append(name, imageFiles[name]);
+    });
 
     const isEdit = editingMember !== null;
     const url = isEdit
@@ -272,7 +287,16 @@ export default function MembersPage() {
                     </td>
                     <td>{m.real_ign || <span className={styles.muted}>—</span>}</td>
                     <td>{m.clan_name}</td>
-                    <td>{m.image_url ? "Available" : <span className={styles.muted}>—</span>}</td>
+                    <td>
+                      {(() => {
+                        const count = GEAR_PROOF_FIELDS.filter(({ name }) => m[name]).length;
+                        return count > 0 ? (
+                          `${count}/${GEAR_PROOF_FIELDS.length}`
+                        ) : (
+                          <span className={styles.muted}>—</span>
+                        );
+                      })()}
+                    </td>
                     <td>{m.stats?.level ?? "—"}</td>
                     <td>{m.stats?.class ?? "—"}</td>
                     <td>
@@ -363,20 +387,6 @@ export default function MembersPage() {
                   </div>
 
                   <div className={`${styles.formField} ${styles.fullWidth}`}>
-                    <label className={styles.label}>Image URL</label>
-                    <input
-                      type="file"
-                      name="image"
-                      className={styles.input}
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                    {imagePreview && (
-                      <img className={styles.imagePreview} src={imagePreview} alt="Gear proof preview" />
-                    )}
-                  </div>
-
-                  <div className={`${styles.formField} ${styles.fullWidth}`}>
                     <label className={styles.label}>Clan</label>
                     <select
                       name="clan_id"
@@ -418,6 +428,31 @@ export default function MembersPage() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* ── Gear Proof Section ── */}
+              <div className={styles.formSection}>
+                <h3 className={styles.formSectionTitle}>Gear Proof</h3>
+                <div className={styles.formGrid}>
+                  {GEAR_PROOF_FIELDS.map(({ name, label }) => (
+                    <div className={styles.formField} key={name}>
+                      <label className={styles.label}>{label}</label>
+                      <input
+                        type="file"
+                        className={styles.input}
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(name, e)}
+                      />
+                      {imagePreviews[name] && (
+                        <img
+                          className={styles.imagePreview}
+                          src={imagePreviews[name]}
+                          alt={`${label} gear proof preview`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {formError && <p className={styles.errorText}>{formError}</p>}

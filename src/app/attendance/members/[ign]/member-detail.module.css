@@ -90,10 +90,28 @@
 .proofImage {
   display: block;
   max-width: 100%;
-  max-height: 640px;
+  max-height: 320px;
   margin: 0 auto;
   border-radius: 8px;
   object-fit: contain;
+}
+
+.proofGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 540px) {
+  .proofGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.proofItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ── Gear Score ── */

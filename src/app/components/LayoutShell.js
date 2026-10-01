@@ -5,7 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./footer";
 import PinGate from "./PinGate";
 
-const BARE_ROUTES = ["/attendance"];
+const BARE_ROUTES = ["/attendance", "/users"];
 
 export default function LayoutShell({ children }) {
   const pathname = usePathname() || "/";
