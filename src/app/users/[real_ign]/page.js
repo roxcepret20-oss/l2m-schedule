@@ -161,9 +161,14 @@ export default function UserDashboardPage() {
           <h1 className={styles.title}>My Profile</h1>
           <p className={styles.subtitle}>Manage your own stats and gear proof</p>
         </div>
-        <button className={styles.btnGhost} onClick={handleLogout}>
-          Logout
-        </button>
+        <div className={styles.headerActions}>
+          <button className={styles.btnGhost} onClick={() => router.push("/leaderboard")}>
+            Leaderboard
+          </button>
+          <button className={styles.btnGhost} onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
       </div>
 
       {loading && <p className={styles.muted}>Loading…</p>}
