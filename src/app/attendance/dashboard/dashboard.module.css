@@ -384,6 +384,16 @@
   border-bottom: 1px solid var(--border);
 }
 
+.memberNameLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.memberNameLink:hover {
+  text-decoration: underline;
+}
+
 .memberTable tr:last-child td {
   border-bottom: none;
 }

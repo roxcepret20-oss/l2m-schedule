@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { getDefenseStat } from "../../../lib/memberStats";
 import styles from "./dashboard.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -93,19 +95,35 @@ export default function DashboardPage() {
                   <th>IGN</th>
                   <th>Real IGN</th>
                   <th>Clan</th>
+                  <th className={styles.scoreColumn}>Defense</th>
                   <th className={styles.scoreColumn}>Gear Score</th>
                 </tr>
               </thead>
               <tbody>
-                {members.map((member, index) => (
+                {members.map((member, index) => {
+                  const defense = getDefenseStat(member);
+                  return (
                   <tr key={member.id}>
                     <td>{index + 1}</td>
-                    <td>{member.ign}</td>
+                    <td>
+                      <Link
+                        href={`/attendance/members/${encodeURIComponent(member.ign)}`}
+                        className={styles.memberNameLink}
+                      >
+                        {member.ign}
+                      </Link>
+                    </td>
                     <td>{member.real_ign || <span className={styles.muted}>—</span>}</td>
                     <td>{member.clan_name || <span className={styles.muted}>—</span>}</td>
+                    <td className={styles.scoreColumn}>
+                      {defense != null
+                        ? Number(defense).toLocaleString()
+                        : <span className={styles.muted}>—</span>}
+                    </td>
                     <td className={styles.scoreColumn}>{Math.round(member.gearScore).toLocaleString()}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { getDefenseStat } from "../../lib/memberStats";
 import styles from "./leaderboard.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -121,27 +122,36 @@ export default function LeaderboardPage() {
                   <th>Real IGN</th>
                   <th>Clan</th>
                   <th>Gear Score</th>
+                  <th>Defense</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ member, gearScore }, index) => (
-                  <tr key={member.id}>
-                    <td className={styles.rankCell}>{index + 1}</td>
-                    <td className={styles.ignCell}>{member.ign}</td>
-                    <td>{member.real_ign || <span className={styles.muted}>—</span>}</td>
-                    <td>{member.clan_name || <span className={styles.muted}>—</span>}</td>
-                    <td className={styles.gearScoreCell}>{Math.round(gearScore).toLocaleString()}</td>
-                    <td>
-                      <button
-                        className={styles.btnGhost}
-                        onClick={() => setSelected({ member, gearScore })}
-                      >
-                        Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map(({ member, gearScore }, index) => {
+                  const defense = getDefenseStat(member);
+                  return (
+                    <tr key={member.id}>
+                      <td className={styles.rankCell}>{index + 1}</td>
+                      <td className={styles.ignCell}>{member.ign}</td>
+                      <td>{member.real_ign || <span className={styles.muted}>—</span>}</td>
+                      <td>{member.clan_name || <span className={styles.muted}>—</span>}</td>
+                      <td className={styles.gearScoreCell}>{Math.round(gearScore).toLocaleString()}</td>
+                      <td>
+                        {defense != null
+                          ? Number(defense).toLocaleString()
+                          : <span className={styles.muted}>—</span>}
+                      </td>
+                      <td>
+                        <button
+                          className={styles.btnGhost}
+                          onClick={() => setSelected({ member, gearScore })}
+                        >
+                          Details
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -231,4 +241,3 @@ export default function LeaderboardPage() {
     </div>
   );
 }
-
