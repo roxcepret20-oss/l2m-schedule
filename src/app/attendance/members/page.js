@@ -6,6 +6,9 @@ import styles from "./members.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
+const CLAN_FILTER_ALL = "all";
+const CLAN_FILTER_NONE = "none";
+
 const EMPTY_INFO_FORM = {
   ign: "",
   real_ign: "",
@@ -75,6 +78,13 @@ export default function MembersPage() {
 
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [clanFilter, setClanFilter] = useState(CLAN_FILTER_ALL);
+
+  const filteredMembers = members.filter((m) => {
+    if (clanFilter === CLAN_FILTER_ALL) return true;
+    if (clanFilter === CLAN_FILTER_NONE) return m.clan_id == null;
+    return String(m.clan_id) === clanFilter;
+  });
 
   function getHeaders(includeJson = true) {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
@@ -258,10 +268,33 @@ export default function MembersPage() {
       {error && <p className={styles.errorText}>{error}</p>}
 
       <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>All Members</h2>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.sectionTitle}>All Members</h2>
+          <div className={styles.filter}>
+            {clanFilter !== CLAN_FILTER_ALL && (
+              <span className={styles.filterCount}>
+                Showing {filteredMembers.length} of {members.length}
+              </span>
+            )}
+            <select
+              className={styles.filterSelect}
+              value={clanFilter}
+              onChange={(e) => setClanFilter(e.target.value)}
+              aria-label="Filter by clan"
+            >
+              <option value={CLAN_FILTER_ALL}>All clans</option>
+              {clans.map((clan) => (
+                <option key={clan.id} value={String(clan.id)}>
+                  {clan.name}
+                </option>
+              ))}
+              <option value={CLAN_FILTER_NONE}>No clan</option>
+            </select>
+          </div>
+        </div>
         {loading ? (
           <p className={styles.muted}>Loading…</p>
-        ) : members.length === 0 ? (
+        ) : filteredMembers.length === 0 ? (
           <p className={styles.muted}>No members found.</p>
         ) : (
           <div className={styles.tableWrapper}>
@@ -278,7 +311,7 @@ export default function MembersPage() {
                 </tr>
               </thead>
               <tbody>
-                {members.map((m) => (
+                {filteredMembers.map((m) => (
                   <tr key={m.id}>
                     <td className={styles.ignCell}>
                       <Link href={`/attendance/members/${encodeURIComponent(m.ign)}`} className={styles.ignLink}>

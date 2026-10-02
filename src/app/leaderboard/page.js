@@ -97,7 +97,7 @@ export default function LeaderboardPage() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Leaderboard</h1>
-          <p className={styles.subtitle}>All members ranked by gear score</p>
+          <p className={styles.subtitle}>Your clan members ranked by gear score</p>
         </div>
         <button className={styles.btnGhost} onClick={handleBack}>
           ← My Profile
