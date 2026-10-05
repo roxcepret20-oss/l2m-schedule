@@ -1,29 +1,9 @@
-"use client";
+import UsersAuthLayout from "./UsersAuthLayout";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+export const metadata = {
+  title: "Shatter Members - Gear Score",
+};
 
 export default function UsersLayout({ children }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [checked, setChecked] = useState(false);
-
-  const isPublic = pathname === "/users/login" || pathname === "/users/register";
-
-  useEffect(() => {
-    if (isPublic) {
-      setChecked(true);
-      return;
-    }
-    const token = localStorage.getItem("user_auth_token");
-    if (!token) {
-      router.replace("/users/login");
-    } else {
-      setChecked(true);
-    }
-  }, [router, isPublic]);
-
-  if (!checked) return null;
-
-  return <>{children}</>;
+  return <UsersAuthLayout>{children}</UsersAuthLayout>;
 }
