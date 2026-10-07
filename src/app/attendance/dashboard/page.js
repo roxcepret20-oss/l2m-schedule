@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDefenseStat } from "../../../lib/memberStats";
+import MemberDetailModal from "./MemberDetailModal";
 import styles from "./dashboard.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -38,6 +38,9 @@ function formatNumber(value) {
 export default function DashboardPage() {
   const [members, setMembers] = useState([]);
   const [clans, setClans] = useState([]);
+  const [formulas, setFormulas] = useState([]);
+  const [selectedIgn, setSelectedIgn] = useState(null);
+  const closeModal = useCallback(() => setSelectedIgn(null), []);
   const [activeTab, setActiveTab] = useState(TAB_ALL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,12 +65,13 @@ export default function DashboardPage() {
           setClans(clansData);
         }
 
-        const formulas = Array.isArray(formulasData) ? formulasData : [];
+        const loadedFormulas = Array.isArray(formulasData) ? formulasData : [];
+        setFormulas(loadedFormulas);
         setMembers(
           (Array.isArray(membersData) ? membersData : [])
             .map((member) => ({
               ...member,
-              gearScore: getGearScore(member, formulas),
+              gearScore: getGearScore(member, loadedFormulas),
             }))
             .sort((left, right) => right.gearScore - left.gearScore)
         );
@@ -175,12 +179,13 @@ export default function DashboardPage() {
                   <tr key={member.id}>
                     <td>{index + 1}</td>
                     <td>
-                      <Link
-                        href={`/attendance/members/${encodeURIComponent(member.ign)}`}
+                      <button
+                        type="button"
                         className={styles.memberNameLink}
+                        onClick={() => setSelectedIgn(member.ign)}
                       >
                         {member.ign}
-                      </Link>
+                      </button>
                     </td>
                     <td>{member.real_ign || <span className={styles.muted}>—</span>}</td>
                     {showClanColumn && (
@@ -200,6 +205,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      {selectedIgn && (
+        <MemberDetailModal ign={selectedIgn} formulas={formulas} onClose={closeModal} />
+      )}
     </div>
   );
 }
