@@ -1,0 +1,596 @@
+/* Shared styles for the Attendances pages (list, details, settings). */
+.page {
+  /* The admin layout's content area already provides the outer padding. */
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.backLink {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-1);
+  margin-bottom: 20px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 12%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, #ef4444 35%, var(--border));
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  background: color-mix(in srgb, #f59e0b 10%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, #f59e0b 30%, var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* ── Inputs ── */
+.input,
+.select {
+  width: 100%;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--main-bg);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--accent);
+}
+
+/* Native time/date pickers draw their clock icon with the browser color scheme; match it to the theme. */
+:global([data-theme="dark"]) .input,
+:global([data-theme="dark"]) .select {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .input,
+  :global(:root:not([data-theme="light"])) .select {
+    color-scheme: dark;
+  }
+}
+
+.inputSm {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.inlineForm {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.inlineForm .field {
+  margin-bottom: 0;
+}
+
+/* ── Buttons ── */
+.btnPrimary {
+  padding: 9px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.btnPrimary:disabled,
+.btnGhost:disabled,
+.btnDelete:disabled,
+.btnEdit:disabled,
+.btnSuccess:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnSuccess {
+  padding: 9px 18px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnGhost {
+  padding: 8px 16px;
+  background: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btnGhost:hover:not(:disabled) {
+  background: var(--main-bg);
+}
+
+.btnEdit {
+  padding: 6px 14px;
+  background: none;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btnEdit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.btnDelete {
+  padding: 6px 14px;
+  background: none;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btnDelete:hover:not(:disabled) {
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+
+.btnDanger {
+  padding: 9px 18px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btnDanger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnSm {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Table ── */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.clickRow {
+  cursor: pointer;
+}
+
+.clickRow:hover td {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.mutedCell {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.nameLink {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nameLink:hover {
+  color: var(--accent);
+}
+
+/* ── Status badges ── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status_created {
+  background: color-mix(in srgb, #6366f1 16%, var(--card-bg));
+  color: #4f46e5;
+}
+
+.status_running {
+  background: color-mix(in srgb, #f59e0b 20%, var(--card-bg));
+  color: #b45309;
+}
+
+.status_done {
+  background: color-mix(in srgb, #22c55e 18%, var(--card-bg));
+  color: #15803d;
+}
+
+.status_inactive {
+  background: color-mix(in srgb, #9ca3af 20%, var(--card-bg));
+  color: var(--muted);
+}
+
+/* ── Grade chips ── */
+.grade {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+.gradeSm {
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.grade_S { background: #7c3aed; }
+.grade_A { background: #2563eb; }
+.grade_B { background: #0891b2; }
+.grade_C { background: #16a34a; }
+.grade_D { background: #d97706; }
+.grade_E { background: #dc2626; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--muted);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tabActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tabActive:hover {
+  color: #fff;
+}
+
+.tabCount {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-size: 11px;
+  background: rgba(127, 127, 127, 0.2);
+}
+
+/* ── Stat cards ── */
+.stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.stat {
+  background: var(--main-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 150px;
+}
+
+.stat span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stat b {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.linkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  text-decoration: underline;
+}
+
+.stat .linkBtn {
+  margin-top: 4px;
+}
+
+.num {
+  text-align: right !important;
+}
+
+.table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+
+.tabAdd {
+  border-style: dashed;
+  color: var(--accent);
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalWide {
+  max-width: 600px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.modalClose:hover {
+  background: var(--main-bg);
+  color: var(--text);
+}
+
+.modalBody {
+  padding: 20px 24px 8px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.modalHeader,
+.modalFooter {
+  flex-shrink: 0;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px 20px;
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

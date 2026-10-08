@@ -32,7 +32,7 @@ export default function AttendanceAuthLayout({ children }) {
   if (isLogin || isPublicMemberDetail) return <>{children}</>;
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} data-admin-shell>
       <Sidebar />
       <div className={styles.main}>
         <DashboardNavbar />

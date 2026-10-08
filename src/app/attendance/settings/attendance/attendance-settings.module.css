@@ -1,0 +1,61 @@
+.dayChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dayCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.dayCheckOn {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.dayCheck input {
+  accent-color: var(--accent);
+}
+
+.templateForm {
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+.gradeTable {
+  max-width: 440px;
+}
+
+.gradeInput {
+  width: 100px;
+}
+
+.searchInput {
+  width: 220px;
+}
+
+.pointsInput {
+  width: 110px;
+}
+
+@media (max-width: 640px) {
+  .templateGrid {
+    grid-template-columns: 1fr;
+  }
+}

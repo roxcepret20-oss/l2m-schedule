@@ -223,6 +223,85 @@
   }
 }
 
+/* ── Collapsible sidebar (icons only) ── */
+.collapseBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.collapseBtn:hover {
+  background: var(--main-bg);
+  color: var(--text);
+}
+
+.sidebarCollapsed {
+  width: 64px;
+}
+
+.sidebarCollapsed .sidebarLogo {
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 16px;
+}
+
+.sidebarCollapsed .collapseBtn {
+  margin-left: 0;
+}
+
+.sidebarCollapsed .logoText,
+.sidebarCollapsed .navLabel,
+.sidebarCollapsed .navChevron {
+  display: none;
+}
+
+.sidebarCollapsed .navItem {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sidebarCollapsed .navFlyout {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  min-width: 190px;
+  padding: 6px;
+  z-index: 200;
+}
+
+.sidebarCollapsed .navFlyoutTitle {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 6px 10px 4px;
+  margin: 0;
+}
+
+.sidebarCollapsed .navFlyoutItem {
+  padding: 9px 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.sidebarCollapsed .navFlyoutItem.navFlyoutItemActive {
+  color: var(--accent);
+}
+
 /* ── Top bar ── */
 .topbar {
   height: 56px;
@@ -497,5 +576,12 @@
 
   .cardGrid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* The sidebar is already icon-only on small screens, so the toggle is not needed there. */
+@media (max-width: 768px) {
+  .collapseBtn {
+    display: none;
   }
 }
