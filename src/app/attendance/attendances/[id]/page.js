@@ -9,6 +9,7 @@ import { distributeSalary, formatDiamonds } from "@/lib/money";
 import { getGearScore } from "@/lib/gearScore";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import { Modal, ConfirmModal } from "../../components/Modal";
+import ParticipantsModal from "./ParticipantsModal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
@@ -483,11 +484,18 @@ export default function AttendanceDetailPage() {
                     <th className={styles.corner}>Member · week pts · grade</th>
                     {dayEntries.map((entry, i) => (
                       <th key={entry.id} className={`${styles.colHead} ${entry.kind === "event" ? styles.colHeadEvent : ""}`}>
-                        <div className={styles.colName}>{entry.kind === "event" ? "★ " : ""}{entry.name}</div>
+                        {readOnly ? (
+                          <div className={styles.colName}>{entry.kind === "event" ? "★ " : ""}{entry.name}</div>
+                        ) : (
+                          <button type="button" className={`${styles.colName} ${styles.colNameBtn}`} title="Import participants from screenshots" onClick={() => setModal({ type: "participants", entryId: entry.id })}>
+                            {entry.kind === "event" ? "★ " : ""}{entry.name}
+                          </button>
+                        )}
                         <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
                         <div className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</div>
                         {!readOnly && (
                           <div className={styles.colButtons}>
+                            <button className={styles.iconBtn} title="Import participants from screenshots" aria-label={`Import participants for ${entry.name}`} onClick={() => setModal({ type: "participants", entryId: entry.id })}>📷</button>
                             <button className={styles.iconBtn} title="Tick / untick everyone" aria-label={`Tick or untick everyone for ${entry.name}`} onClick={() => toggleColumn(entry)}>☑</button>
                             <button className={styles.iconBtn} title="Copy ticks from the previous column" aria-label={`Copy ticks to ${entry.name} from previous column`} disabled={i === 0} onClick={() => copyPrevious(i)}>⧉</button>
                             <button className={styles.iconBtn} title="Edit time / points" aria-label={`Edit ${entry.name}`} onClick={() => setModal({ type: "edit", entry })}>✎</button>
@@ -584,6 +592,23 @@ export default function AttendanceDetailPage() {
           onClose={() => setModal(null)}
         />
       )}
+      {modal?.type === "participants" && (() => {
+        const entry = sheet.days.flatMap((d) => d.entries).find((e) => e.id === modal.entryId);
+        if (!entry) return null;
+        return (
+          <ParticipantsModal
+            entry={entry}
+            clanName={sheet.clan.name}
+            members={sheet.members}
+            tickedIds={new Set(entry.member_ids)}
+            onClose={() => setModal(null)}
+            onSubmit={async (memberIds) => {
+              tickCells(memberIds.map((memberId) => ({ entryId: entry.id, memberId })), true);
+              setModal(null);
+            }}
+          />
+        );
+      })()}
       {modal?.type === "bulk" && (
         <BulkBossModal
           dayLabel={DAY_NAMES[tab]}
