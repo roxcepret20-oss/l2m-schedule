@@ -499,7 +499,7 @@ export default function AttendanceDetailPage() {
                             <button className={styles.iconBtn} title="Tick / untick everyone" aria-label={`Tick or untick everyone for ${entry.name}`} onClick={() => toggleColumn(entry)}>☑</button>
                             <button className={styles.iconBtn} title="Copy ticks from the previous column" aria-label={`Copy ticks to ${entry.name} from previous column`} disabled={i === 0} onClick={() => copyPrevious(i)}>⧉</button>
                             <button className={styles.iconBtn} title="Edit time / points" aria-label={`Edit ${entry.name}`} onClick={() => setModal({ type: "edit", entry })}>✎</button>
-                            <button className={styles.iconBtn} title="Remove" aria-label={`Remove ${entry.name}`} onClick={() => setModal({ type: "remove", entry })}>✕</button>
+                            <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} title="Remove column" aria-label={`Remove ${entry.name}`} onClick={() => setModal({ type: "remove", entry })}>✕</button>
                           </div>
                         )}
                       </th>

@@ -62,9 +62,9 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  width: 96px;
-  min-width: 96px;
-  max-width: 96px;
+  width: 132px;
+  min-width: 132px;
+  max-width: 132px;
   padding: 6px 4px !important;
   vertical-align: top;
   background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
@@ -120,20 +120,38 @@
 .colButtons {
   display: flex;
   justify-content: center;
+  flex-wrap: nowrap;
   gap: 2px;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
   border: none;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
-  padding: 3px 5px;
+  padding: 0;
   border-radius: 4px;
   font-family: inherit;
+}
+
+.iconBtnDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, #ef4444 16%, transparent);
+  color: #ef4444;
+}
+
+/* Keep the destructive action visually separated from the edit actions. */
+.iconBtnDanger {
+  margin-left: 4px;
+  color: color-mix(in srgb, #ef4444 75%, var(--muted));
 }
 
 .iconBtn:hover:not(:disabled) {
