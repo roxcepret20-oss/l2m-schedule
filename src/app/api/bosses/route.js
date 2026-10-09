@@ -9,7 +9,9 @@ export async function GET(request) {
     const names = namesParam ? namesParam.split(",").map(n => n.trim()).filter(Boolean) : [];
     const tableName = source === "duplicate" ? "bosses_duplicate" : "bosses";
     const bosses = await fetchBossContents(category, names, tableName);
-    return new Response(JSON.stringify(bosses), { headers: { "Content-Type": "application/json" }});
+    return new Response(JSON.stringify(bosses), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },
+    });
   } catch (err) {
     console.error("API GET /bosses error", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
