@@ -491,7 +491,7 @@ export default function AttendanceDetailPage() {
                             {entry.kind === "event" ? "★ " : ""}{entry.name}
                           </button>
                         )}
-                        <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
+                        <div className={styles.colMeta}>{entry.time} · {entry.points}p{entry.server === "invasion" && <span className={styles.serverTag}>Invasion</span>}</div>
                         <div className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</div>
                         {!readOnly && (
                           <div className={styles.colButtons}>
@@ -1006,7 +1006,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
       .catch((err) => setLoadError(err.message));
   }, []);
 
-  const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: String(boss.default_points) };
+  const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: String(boss.default_points), server: "ours" };
   const update = (boss, patch) => setRows((prev) => ({ ...prev, [boss.id]: { ...rowFor(boss), ...patch } }));
 
   const q = search.trim().toLowerCase();
@@ -1018,7 +1018,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
     setSaving(true);
     setError("");
     try {
-      await onSubmit(selected.map((b) => ({ boss_id: b.id, time: rowFor(b).time, points: Number(rowFor(b).points) })));
+      await onSubmit(selected.map((b) => ({ boss_id: b.id, time: rowFor(b).time, points: Number(rowFor(b).points), server: rowFor(b).server })));
     } catch (err) {
       setError(err.message);
       setSaving(false);
@@ -1046,13 +1046,17 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
         <p className={ui.muted} style={{ marginTop: 12 }}>Loading…</p>
       ) : (
         <div className={styles.bulkList}>
-          <div className={styles.bulkHead}><span /><span>Boss</span><span>Time</span><span>Points</span></div>
+          <div className={styles.bulkHead}><span /><span>Boss</span><span>Server</span><span>Time</span><span>Points</span></div>
           {visible.map((boss) => {
             const row = rowFor(boss);
             return (
               <div key={boss.id} className={`${styles.bulkRow} ${row.checked ? "" : styles.bulkRowOff}`}>
                 <input type="checkbox" checked={row.checked} onChange={(e) => update(boss, { checked: e.target.checked })} aria-label={`Select ${boss.name}`} />
                 <span>{boss.name}</span>
+                <select className={`${ui.input} ${styles.bulkField}`} value={row.server} onChange={(e) => update(boss, { server: e.target.value, checked: true })} aria-label={`${boss.name} server`}>
+                  <option value="ours">Ours</option>
+                  <option value="invasion">Invasion</option>
+                </select>
                 <input type="time" className={`${ui.input} ${styles.bulkField}`} value={row.time} onChange={(e) => update(boss, { time: e.target.value, checked: true })} aria-label={`${boss.name} time`} />
                 <input type="number" min="0" className={`${ui.input} ${styles.bulkField}`} value={row.points} onChange={(e) => update(boss, { points: e.target.value })} aria-label={`${boss.name} points`} />
               </div>
