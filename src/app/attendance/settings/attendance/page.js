@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/attendanceApi";
 import { DAY_SHORT } from "@/lib/weeks";
 import { GRADE_ORDER } from "@/lib/attendanceStandings";
+import { describeRule, emptyRule, toEditableRules, toPayloadRules, validateRules } from "@/lib/pointRules";
 import { ConfirmModal } from "../../components/Modal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-settings.module.css";
+import PointRulesEditor from "./PointRulesEditor";
 
 const TABS = [
   { id: "bosses", label: "Bosses" },
+  { id: "points", label: "Point schemas" },
   { id: "events", label: "Daily events" },
   { id: "grades", label: "Grade thresholds & scores" },
 ];
@@ -35,6 +38,7 @@ export default function AttendanceSettingsPage() {
       </div>
 
       {tab === "bosses" && <BossesTab />}
+      {tab === "points" && <PointRulesTab />}
       {tab === "events" && <EventsTab />}
       {tab === "grades" && <GradesTab />}
     </div>
@@ -51,11 +55,15 @@ function BossesTab() {
 
   const [addName, setAddName] = useState("");
   const [addPoints, setAddPoints] = useState("10");
+  const [addCustom, setAddCustom] = useState(false);
+  const [addRules, setAddRules] = useState([]);
   const [adding, setAdding] = useState(false);
 
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editPoints, setEditPoints] = useState("");
+  const [editCustom, setEditCustom] = useState(false);
+  const [editRules, setEditRules] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -89,9 +97,11 @@ function BossesTab() {
     try {
       await apiFetch("/api/attendance-settings/bosses", {
         method: "POST",
-        body: { name: addName.trim(), default_points: Number(addPoints) },
+        body: { name: addName.trim(), default_points: Number(addPoints), point_rules: addCustom ? toPayloadRules(addRules) : null },
       });
       setAddName("");
+      setAddCustom(false);
+      setAddRules([]);
       await load();
     } catch (err) {
       setError(err.message);
@@ -104,6 +114,8 @@ function BossesTab() {
     setEditId(boss.id);
     setEditName(boss.name);
     setEditPoints(String(boss.default_points));
+    setEditCustom(!!boss.point_rules?.length);
+    setEditRules(toEditableRules(boss.point_rules));
   }
 
   async function handleSave(e) {
@@ -113,7 +125,7 @@ function BossesTab() {
     try {
       await apiFetch(`/api/attendance-settings/bosses/${editId}`, {
         method: "PUT",
-        body: { name: editName.trim(), default_points: Number(editPoints) },
+        body: { name: editName.trim(), default_points: Number(editPoints), point_rules: editCustom ? toPayloadRules(editRules) : null },
       });
       setEditId(null);
       await load();
@@ -144,7 +156,11 @@ function BossesTab() {
         <h2 className={ui.sectionTitle}>Boss list ({bosses.length})</h2>
         <input className={`${ui.input} ${ui.inputSm} ${styles.searchInput}`} placeholder="Search boss…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search boss" />
       </div>
-      <p className={ui.muted} style={{ marginBottom: 16 }}>Points are the default when a boss is added to an attendance; they can be overridden per spawn. Changing them never affects past attendances.</p>
+      <p className={ui.muted} style={{ marginBottom: 16 }}>
+        When a boss is added to an attendance (manually or by the Discord bot), its points come from the matching time window in the
+        <b> Point schemas</b> tab. A boss can have its own schema instead; the default points are used when no window matches.
+        Points can still be overridden per spawn. Changing rules never affects past attendances.
+      </p>
 
       <form onSubmit={handleAdd} className={ui.inlineForm} style={{ marginBottom: 16 }}>
         <div className={ui.field} style={{ flex: 1, minWidth: 180 }}>
@@ -155,9 +171,15 @@ function BossesTab() {
           <label className={ui.label} htmlFor="boss-add-points">Default points</label>
           <input id="boss-add-points" type="number" min="0" className={`${ui.input} ${styles.pointsInput}`} value={addPoints} onChange={(e) => setAddPoints(e.target.value)} required />
         </div>
-        <button type="submit" className={ui.btnPrimary} disabled={adding || !addName.trim() || addPoints === ""}>
+        <button type="submit" className={ui.btnPrimary} disabled={adding || !addName.trim() || addPoints === "" || (addCustom && !!validateRules(addRules))}>
           {adding ? "Adding…" : "Add boss"}
         </button>
+        <div className={styles.customBox}>
+          <label>
+            <input type="checkbox" checked={addCustom} onChange={(e) => { setAddCustom(e.target.checked); if (e.target.checked && addRules.length === 0) setAddRules([emptyRule()]); }} /> Custom point schema for this boss
+          </label>
+          {addCustom && <div style={{ marginTop: 10 }}><PointRulesEditor rules={addRules} onChange={setAddRules} idPrefix="boss-add" /></div>}
+        </div>
       </form>
 
       {error && <div className={ui.banner}>{error}</div>}
@@ -170,18 +192,24 @@ function BossesTab() {
         <div className={ui.tableWrapper}>
           <table className={ui.table}>
             <thead>
-              <tr><th>Name</th><th>Default points</th><th>Updated by</th><th>Actions</th></tr>
+              <tr><th>Name</th><th>Default points</th><th>Point schema</th><th>Updated by</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {visible.map((boss) =>
                 editId === boss.id ? (
                   <tr key={boss.id}>
-                    <td colSpan={4}>
+                    <td colSpan={5}>
                       <form onSubmit={handleSave} className={ui.inlineForm}>
                         <input className={`${ui.input} ${ui.inputSm}`} style={{ flex: 1, minWidth: 160 }} value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={100} required autoFocus aria-label="Boss name" />
                         <input type="number" min="0" className={`${ui.input} ${ui.inputSm} ${styles.pointsInput}`} value={editPoints} onChange={(e) => setEditPoints(e.target.value)} required aria-label="Default points" />
-                        <button type="submit" className={`${ui.btnPrimary} ${ui.btnSm}`} disabled={saving || !editName.trim() || editPoints === ""}>{saving ? "Saving…" : "Save"}</button>
+                        <button type="submit" className={`${ui.btnPrimary} ${ui.btnSm}`} disabled={saving || !editName.trim() || editPoints === "" || (editCustom && !!validateRules(editRules))}>{saving ? "Saving…" : "Save"}</button>
                         <button type="button" className={`${ui.btnGhost} ${ui.btnSm}`} onClick={() => setEditId(null)} disabled={saving}>Cancel</button>
+                        <div className={styles.customBox}>
+                          <label>
+                            <input type="checkbox" checked={editCustom} onChange={(e) => { setEditCustom(e.target.checked); if (e.target.checked && editRules.length === 0) setEditRules([emptyRule()]); }} /> Custom point schema for this boss
+                          </label>
+                          {editCustom && <div style={{ marginTop: 10 }}><PointRulesEditor rules={editRules} onChange={setEditRules} idPrefix="boss-edit" /></div>}
+                        </div>
                       </form>
                     </td>
                   </tr>
@@ -189,6 +217,9 @@ function BossesTab() {
                   <tr key={boss.id}>
                     <td>{boss.name}</td>
                     <td>{boss.default_points}</td>
+                    <td className={ui.mutedCell}>
+                      {boss.point_rules?.length ? boss.point_rules.map((r) => <span key={`${r.start_time}-${r.end_time}`} className={styles.ruleSummary}>{describeRule(r)}</span>) : "Global"}
+                    </td>
                     <td className={ui.mutedCell}>{boss.updated_by_name || "—"}</td>
                     <td>
                       <div className={ui.actions}>
@@ -214,6 +245,74 @@ function BossesTab() {
           onConfirm={handleDelete}
           onClose={() => setDeleteTarget(null)}
         />
+      )}
+    </div>
+  );
+}
+
+/* ───────────── Point schemas ───────────── */
+
+function PointRulesTab() {
+  const [rules, setRules] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    apiFetch("/api/attendance-settings/point-rules")
+      .then((data) => setRules(toEditableRules(data)))
+      .catch((err) => setError(err.message));
+  }, []);
+
+  const validationError = rules ? validateRules(rules) : "";
+
+  function change(next) {
+    setSaved(false);
+    setRules(next);
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    try {
+      const data = await apiFetch("/api/attendance-settings/point-rules", {
+        method: "PUT",
+        body: { rules: toPayloadRules(rules) },
+      });
+      setRules(toEditableRules(data));
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={ui.card}>
+      <h2 className={ui.sectionTitle} style={{ marginBottom: 6 }}>Point schemas</h2>
+      <p className={ui.muted} style={{ marginBottom: 16 }}>
+        Points a boss earns depend on the time it spawned (Asia/Jakarta time). Each window includes both its start and end minute;
+        a window whose start is later than its end wraps past midnight (e.g. 22:00 → 05:59). Windows cannot overlap. If no window matches,
+        the boss&apos;s default points are used. These rules apply to bosses added from the Add bosses dialog and by the Discord bot;
+        a boss with its own schema (Bosses tab) ignores them. Past attendances are never changed.
+      </p>
+
+      {!rules ? (
+        error ? <div className={ui.banner}>{error}</div> : <p className={ui.muted}>Loading…</p>
+      ) : (
+        <form onSubmit={handleSave}>
+          <PointRulesEditor rules={rules} onChange={change} idPrefix="global" />
+          {error && <p className={ui.errorText}>{error}</p>}
+          <div className={ui.actions} style={{ marginTop: 16 }}>
+            <button type="submit" className={ui.btnPrimary} disabled={saving || !!validationError}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            {saved && <span className={ui.muted}>Saved.</span>}
+          </div>
+        </form>
       )}
     </div>
   );

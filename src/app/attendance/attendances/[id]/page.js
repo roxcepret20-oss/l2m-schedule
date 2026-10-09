@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/attendanceApi";
 import { computeStandings } from "@/lib/attendanceStandings";
 import { distributeSalary, formatDiamonds } from "@/lib/money";
 import { getGearScore } from "@/lib/gearScore";
+import { findRule, resolvePoints } from "@/lib/pointRules";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import { Modal, ConfirmModal } from "../../components/Modal";
 import ParticipantsModal from "./ParticipantsModal";
@@ -994,6 +995,7 @@ function EntryModal({ title, initial, withName, submitLabel, note, onClose, onSu
 
 function BulkBossModal({ dayLabel, onClose, onSubmit }) {
   const [bosses, setBosses] = useState(null);
+  const [globalRules, setGlobalRules] = useState([]);
   const [loadError, setLoadError] = useState("");
   const [rows, setRows] = useState({});
   const [search, setSearch] = useState("");
@@ -1004,21 +1006,30 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
     apiFetch("/api/attendance-settings/bosses")
       .then(setBosses)
       .catch((err) => setLoadError(err.message));
+    // Without the global rules the points fall back to each boss's default points.
+    apiFetch("/api/attendance-settings/point-rules")
+      .then(setGlobalRules)
+      .catch(() => {});
   }, []);
 
-  const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: String(boss.default_points), server: "ours" };
+  // points === null means "not edited by hand": it follows the time through the point rules.
+  const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: null, server: "ours" };
+  const pointsFor = (boss) => {
+    const row = rowFor(boss);
+    return row.points ?? String(resolvePoints(row.time, boss, globalRules));
+  };
   const update = (boss, patch) => setRows((prev) => ({ ...prev, [boss.id]: { ...rowFor(boss), ...patch } }));
 
   const q = search.trim().toLowerCase();
   const visible = (bosses ?? []).filter((b) => !q || b.name.toLowerCase().includes(q));
   const selected = (bosses ?? []).filter((b) => rowFor(b).checked);
-  const valid = selected.length > 0 && selected.every((b) => rowFor(b).time && rowFor(b).points !== "");
+  const valid = selected.length > 0 && selected.every((b) => rowFor(b).time && pointsFor(b) !== "");
 
   async function handleSubmit() {
     setSaving(true);
     setError("");
     try {
-      await onSubmit(selected.map((b) => ({ boss_id: b.id, time: rowFor(b).time, points: Number(rowFor(b).points), server: rowFor(b).server })));
+      await onSubmit(selected.map((b) => ({ boss_id: b.id, time: rowFor(b).time, points: Number(pointsFor(b)), server: rowFor(b).server })));
     } catch (err) {
       setError(err.message);
       setSaving(false);
@@ -1039,7 +1050,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
         </>
       }
     >
-      <p className={ui.muted} style={{ marginBottom: 10 }}>Tick every boss that spawned and set its time. Points default from settings and can be changed per spawn.</p>
+      <p className={ui.muted} style={{ marginBottom: 10 }}>Tick every boss that spawned and set its time. Points follow the time through the point rules (Settings → Point schemas) until you change them by hand.</p>
       <input className={`${ui.input} ${ui.inputSm}`} placeholder="Search boss…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search boss" />
       {loadError && <p className={ui.errorText}>{loadError}</p>}
       {!bosses && !loadError ? (
@@ -1058,7 +1069,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
                   <option value="invasion">Invasion</option>
                 </select>
                 <input type="time" className={`${ui.input} ${styles.bulkField}`} value={row.time} onChange={(e) => update(boss, { time: e.target.value, checked: true })} aria-label={`${boss.name} time`} />
-                <input type="number" min="0" className={`${ui.input} ${styles.bulkField}`} value={row.points} onChange={(e) => update(boss, { points: e.target.value })} aria-label={`${boss.name} points`} />
+                <input type="number" min="0" className={`${ui.input} ${styles.bulkField}`} value={pointsFor(boss)} title={findRule(row.time, boss, globalRules)?.label ?? "Default points"} onChange={(e) => update(boss, { points: e.target.value })} aria-label={`${boss.name} points`} />
               </div>
             );
           })}
