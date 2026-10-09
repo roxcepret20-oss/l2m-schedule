@@ -483,7 +483,7 @@ export default function AttendanceDetailPage() {
                   <tr>
                     <th className={styles.corner}>Member · week pts · grade</th>
                     {dayEntries.map((entry, i) => (
-                      <th key={entry.id} className={`${styles.colHead} ${entry.kind === "event" ? styles.colHeadEvent : ""}`}>
+                      <th key={entry.id} title={entry.server === "invasion" ? "Invasion server" : undefined} className={`${styles.colHead} ${entry.kind === "event" ? styles.colHeadEvent : ""} ${entry.server === "invasion" ? styles.colHeadInvasion : ""}`}>
                         {readOnly ? (
                           <div className={styles.colName}>{entry.kind === "event" ? "★ " : ""}{entry.name}</div>
                         ) : (
@@ -491,7 +491,7 @@ export default function AttendanceDetailPage() {
                             {entry.kind === "event" ? "★ " : ""}{entry.name}
                           </button>
                         )}
-                        <div className={styles.colMeta}>{entry.time} · {entry.points}p{entry.server === "invasion" && <span className={styles.serverTag}>Invasion</span>}</div>
+                        <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
                         <div className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</div>
                         {!readOnly && (
                           <div className={styles.colButtons}>
@@ -537,7 +537,7 @@ export default function AttendanceDetailPage() {
                               aria-label={`${member.ign} – ${entry.name}`}
                               tabIndex={focusRow === r && focusCol === c ? 0 : -1}
                               onFocus={() => setActiveCell({ r, c })}
-                              className={`${styles.cell} ${on ? styles.cellOn : ""} ${readOnly ? styles.cellReadOnly : ""}`}
+                              className={`${styles.cell} ${entry.server === "invasion" ? styles.cellInvasion : ""} ${on ? styles.cellOn : ""} ${readOnly ? styles.cellReadOnly : ""}`}
                             >
                               {on ? "✓" : ""}
                             </td>

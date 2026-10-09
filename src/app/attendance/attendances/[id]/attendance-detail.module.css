@@ -75,6 +75,12 @@
   background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
 }
 
+/* Boss entries from the Invasion server use the app's invasion palette. */
+.colHeadInvasion {
+  background: var(--invasion-bg);
+  border-bottom-color: var(--invasion-border) !important;
+}
+
 .colName {
   font-size: 12px;
   font-weight: 700;
@@ -103,18 +109,6 @@
 .colMeta {
   font-size: 11px;
   color: var(--muted);
-}
-
-.serverTag {
-  display: inline-block;
-  margin-left: 4px;
-  padding: 0 5px;
-  border-radius: 8px;
-  border: 1px solid #a855f7;
-  color: #a855f7;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
 }
 
 .colCount {
@@ -239,6 +233,22 @@
 
 .cellOn:hover {
   background: color-mix(in srgb, var(--accent) 80%, #fff);
+}
+
+.cellInvasion {
+  background: var(--invasion-bg);
+}
+
+.cellInvasion:hover {
+  background: color-mix(in srgb, var(--invasion-border) 40%, var(--invasion-bg));
+}
+
+.cellInvasion.cellOn {
+  background: #7c3aed;
+}
+
+.cellInvasion.cellOn:hover {
+  background: #8b5cf6;
 }
 
 .cell:focus-visible {
