@@ -37,6 +37,7 @@ export default function UserDashboardPage() {
   const [member, setMember] = useState(null);
   const [statFields, setStatFields] = useState([]);
   const [stats, setStats] = useState({});
+  const [ign, setIgn] = useState("");
   const [imageFiles, setImageFiles] = useState({});
   const [imagePreviews, setImagePreviews] = useState({});
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,7 @@ export default function UserDashboardPage() {
       }
 
       setMember(profileData);
+      setIgn(profileData.ign ?? "");
 
       const formulasData = await formulasRes.json();
       const fields = formulasRes.ok && Array.isArray(formulasData)
@@ -121,7 +123,15 @@ export default function UserDashboardPage() {
     setSaveError("");
     setSaveSuccess(false);
 
+    const trimmedIgn = ign.trim();
+    if (!trimmedIgn) {
+      setSaveError("IGN cannot be empty.");
+      setSaving(false);
+      return;
+    }
+
     const payload = new FormData();
+    payload.append("ign", trimmedIgn);
     payload.append("stats", JSON.stringify(Object.fromEntries(
       statFields.map(({ name }) => [
         name,
@@ -141,6 +151,7 @@ export default function UserDashboardPage() {
       const data = await res.json();
       if (res.ok) {
         setMember(data);
+        setIgn(data.ign ?? trimmedIgn);
         setImageFiles({});
         setImagePreviews({});
         setSaveSuccess(true);
@@ -176,12 +187,20 @@ export default function UserDashboardPage() {
 
       {!loading && !error && member && (
         <>
+          <form onSubmit={handleSave}>
           <div className={styles.card}>
             <h2 className={styles.sectionTitle}>Information</h2>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>IGN</span>
-                <span className={styles.infoValue}>{member.ign}</span>
+                <label className={styles.infoLabel} htmlFor="ign">IGN</label>
+                <input
+                  id="ign"
+                  type="text"
+                  className={styles.input}
+                  value={ign}
+                  onChange={(e) => setIgn(e.target.value)}
+                  required
+                />
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Real IGN</span>
@@ -196,7 +215,6 @@ export default function UserDashboardPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSave}>
             <div className={styles.card}>
               <h2 className={styles.sectionTitle}>Stats</h2>
               {statFields.length === 0 ? (
