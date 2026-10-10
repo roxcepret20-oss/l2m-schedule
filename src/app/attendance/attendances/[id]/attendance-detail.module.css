@@ -269,6 +269,42 @@
   background: #8b5cf6;
 }
 
+/* Cell color comes from the ticking admin (inline style); the ring keeps invasion cells recognizable. */
+.cellOnAdmin:hover {
+  filter: brightness(1.12);
+}
+
+.cellInvasion.cellOnAdmin {
+  box-shadow: inset 0 0 0 2px var(--invasion-border);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legendTitle {
+  font-weight: 600;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
 .cell:focus-visible {
   outline: 2px solid var(--text);
 }

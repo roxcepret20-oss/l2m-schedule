@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/attendanceApi";
+import { colorForAdmin, getCurrentAdmin, readableTextColor } from "@/lib/adminColors";
 import { computeStandings } from "@/lib/attendanceStandings";
 import { distributeSalary, formatDiamonds } from "@/lib/money";
 import { getGearScore } from "@/lib/gearScore";
@@ -11,10 +12,12 @@ import { findRule, resolvePoints } from "@/lib/pointRules";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import { Modal, ConfirmModal } from "../../components/Modal";
 import ParticipantsModal from "./ParticipantsModal";
+import LogsView from "./LogsView";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
 const SUMMARY_TAB = 7;
+const LOGS_TAB = "logs";
 const OUTDATED_API_MESSAGE =
   "The API server is running old code (it does not return handicap/salaries). Restart the API server, then refresh this page.";
 // Bosses first (by time), events last (by time), so events always sit in the right-most columns.
@@ -39,6 +42,8 @@ export default function AttendanceDetailPage() {
   const dragRef = useRef(null);
   const queueRef = useRef(Promise.resolve());
   const pointerTypeRef = useRef("mouse");
+  // Only used to color optimistic ticks; the server records who really ticked.
+  const [currentAdmin] = useState(() => getCurrentAdmin());
 
   useEffect(() => {
     sheetRef.current = sheet;
@@ -75,6 +80,13 @@ export default function AttendanceDetailPage() {
     [sheet]
   );
   const standingByMember = useMemo(() => new Map(standings.map((s) => [s.member_id, s])), [standings]);
+  const adminById = useMemo(() => new Map((sheet?.admins ?? []).map((a) => [a.id, a])), [sheet?.admins]);
+  // Admins who have ticked something in this attendance, for the color legend.
+  const tickingAdmins = useMemo(() => {
+    const ids = new Set();
+    sheet?.days.forEach((day) => day.entries.forEach((e) => Object.values(e.ticked_by ?? {}).forEach((id) => ids.add(id))));
+    return (sheet?.admins ?? []).filter((a) => ids.has(a.id));
+  }, [sheet]);
 
   /* ───────────── local state helpers ───────────── */
 
@@ -86,6 +98,15 @@ export default function AttendanceDetailPage() {
     return false;
   };
 
+  const tickerOf = (entryId, memberId) => {
+    for (const day of sheetRef.current?.days ?? []) {
+      const entry = day.entries.find((e) => e.id === entryId);
+      if (entry) return entry.ticked_by?.[memberId] ?? null;
+    }
+    return null;
+  };
+
+  // A change may carry `by` (the admin id to show as the ticker); unticks drop the ticker.
   const applyChanges = useCallback((changes) => {
     setSheet((prev) => {
       if (!prev) return prev;
@@ -102,8 +123,17 @@ export default function AttendanceDetailPage() {
             const list = byEntry.get(entry.id);
             if (!list) return entry;
             const set = new Set(entry.member_ids);
-            list.forEach((c) => (c.checked ? set.add(c.member_id) : set.delete(c.member_id)));
-            return { ...entry, member_ids: [...set] };
+            const tickedBy = { ...entry.ticked_by };
+            list.forEach((c) => {
+              if (c.checked) {
+                set.add(c.member_id);
+                if (c.by != null) tickedBy[c.member_id] = c.by;
+              } else {
+                set.delete(c.member_id);
+                delete tickedBy[c.member_id];
+              }
+            });
+            return { ...entry, member_ids: [...set], ticked_by: tickedBy };
           }),
         })),
       };
@@ -131,7 +161,8 @@ export default function AttendanceDetailPage() {
     (changes, inverse) => {
       enqueue(async () => {
         try {
-          await apiFetch(`/api/attendances/${attendanceId}/hits`, { method: "PATCH", body: { changes } });
+          const payload = changes.map(({ entry_id, member_id, checked }) => ({ entry_id, member_id, checked }));
+          await apiFetch(`/api/attendances/${attendanceId}/hits`, { method: "PATCH", body: { changes: payload } });
         } catch (err) {
           applyChanges(inverse);
           setActionError(err.message);
@@ -145,16 +176,23 @@ export default function AttendanceDetailPage() {
   const tickCells = (cells, value) => {
     const effective = cells.filter((c) => isChecked(c.entryId, c.memberId) !== value);
     if (effective.length === 0) return;
-    applyChanges(effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: value })));
+    const by = currentAdmin?.id;
+    applyChanges(effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: value, by })));
     sendChanges(
       effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: value })),
-      effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: !value }))
+      effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: !value, by: tickerOf(c.entryId, c.memberId) }))
     );
   };
 
   const setEntryMembers = (entryId, memberIds) => {
-    const previous = (sheetRef.current?.days ?? []).flatMap((d) => d.entries).find((e) => e.id === entryId)?.member_ids ?? [];
-    replaceEntry(entryId, { member_ids: memberIds });
+    const previous = (sheetRef.current?.days ?? []).flatMap((d) => d.entries).find((e) => e.id === entryId);
+    const previousIds = previous?.member_ids ?? [];
+    const previousBy = previous?.ticked_by ?? {};
+    // Members who stay ticked keep their original ticker; newly ticked ones belong to the current admin.
+    const nextBy = Object.fromEntries(
+      memberIds.map((m) => [m, previousBy[m] ?? currentAdmin?.id]).filter(([, admin]) => admin != null)
+    );
+    replaceEntry(entryId, { member_ids: memberIds, ticked_by: nextBy });
     enqueue(async () => {
       try {
         await apiFetch(`/api/attendances/${attendanceId}/entries/${entryId}/hits`, {
@@ -162,7 +200,7 @@ export default function AttendanceDetailPage() {
           body: { member_ids: memberIds },
         });
       } catch (err) {
-        replaceEntry(entryId, { member_ids: previous });
+        replaceEntry(entryId, { member_ids: previousIds, ticked_by: previousBy });
         setActionError(err.message);
       }
     });
@@ -179,8 +217,8 @@ export default function AttendanceDetailPage() {
     const drag = dragRef.current;
     const key = `${cell.entryId}:${cell.memberId}`;
     if (!drag || drag.touched.has(key)) return;
-    drag.touched.set(key, { ...cell, prev: isChecked(cell.entryId, cell.memberId) });
-    applyChanges([{ entry_id: cell.entryId, member_id: cell.memberId, checked: drag.value }]);
+    drag.touched.set(key, { ...cell, prev: isChecked(cell.entryId, cell.memberId), prevBy: tickerOf(cell.entryId, cell.memberId) });
+    applyChanges([{ entry_id: cell.entryId, member_id: cell.memberId, checked: drag.value, by: currentAdmin?.id }]);
   };
 
   const endDrag = useCallback(() => {
@@ -191,7 +229,7 @@ export default function AttendanceDetailPage() {
     if (changed.length === 0) return;
     sendChanges(
       changed.map((t) => ({ entry_id: t.entryId, member_id: t.memberId, checked: drag.value })),
-      changed.map((t) => ({ entry_id: t.entryId, member_id: t.memberId, checked: t.prev }))
+      changed.map((t) => ({ entry_id: t.entryId, member_id: t.memberId, checked: t.prev, by: t.prevBy }))
     );
   }, [sendChanges]);
 
@@ -424,6 +462,9 @@ export default function AttendanceDetailPage() {
         <button role="tab" aria-selected={tab === SUMMARY_TAB} className={`${ui.tab} ${tab === SUMMARY_TAB ? ui.tabActive : ""}`} onClick={() => setTab(SUMMARY_TAB)}>
           Σ Summary &amp; grades
         </button>
+        <button role="tab" aria-selected={tab === LOGS_TAB} className={`${ui.tab} ${tab === LOGS_TAB ? ui.tabActive : ""}`} onClick={() => setTab(LOGS_TAB)}>
+          📜 Logs
+        </button>
         {sheet.salaries.map((salary) => (
           <button key={salary.id} role="tab" aria-selected={tab === `salary-${salary.id}`} className={`${ui.tab} ${tab === `salary-${salary.id}` ? ui.tabActive : ""}`} onClick={() => setTab(`salary-${salary.id}`)}>
             💎 {salary.name}
@@ -434,7 +475,9 @@ export default function AttendanceDetailPage() {
         )}
       </div>
 
-      {tab === SUMMARY_TAB ? (
+      {tab === LOGS_TAB ? (
+        <LogsView attendanceId={attendanceId} admins={sheet.admins ?? []} />
+      ) : tab === SUMMARY_TAB ? (
         <SummaryView sheet={sheet} standings={standings} fullScore={fullScore} targetScore={targetScore} onEditHandicap={readOnly ? null : () => setModal({ type: "rename" })} />
       ) : activeSalary ? (
         <SalaryView
@@ -461,6 +504,18 @@ export default function AttendanceDetailPage() {
             </span>
             <input className={`${ui.input} ${ui.inputSm} ${styles.searchInput}`} placeholder="Search member…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search member" />
           </div>
+
+          {tickingAdmins.length > 0 && (
+            <div className={styles.legend} aria-label="Ticks by admin">
+              <span className={styles.legendTitle}>Ticked by</span>
+              {tickingAdmins.map((admin) => (
+                <span key={admin.id} className={styles.legendItem}>
+                  <span className={styles.legendDot} style={{ background: colorForAdmin(admin) }} />
+                  {admin.name}
+                </span>
+              ))}
+            </div>
+          )}
 
           {dayEntries.length === 0 ? (
             <div className={`${styles.matrixWrap} ${styles.empty}`}>
@@ -525,6 +580,8 @@ export default function AttendanceDetailPage() {
                         </td>
                         {dayEntries.map((entry, c) => {
                           const on = entry.member_ids.includes(member.id);
+                          const ticker = on ? adminById.get(entry.ticked_by?.[member.id]) : null;
+                          const tickColor = ticker ? colorForAdmin(ticker) : null;
                           return (
                             <td
                               key={entry.id}
@@ -536,9 +593,11 @@ export default function AttendanceDetailPage() {
                               role="checkbox"
                               aria-checked={on}
                               aria-label={`${member.ign} – ${entry.name}`}
+                              title={ticker ? `Ticked by ${ticker.name}` : undefined}
                               tabIndex={focusRow === r && focusCol === c ? 0 : -1}
                               onFocus={() => setActiveCell({ r, c })}
-                              className={`${styles.cell} ${entry.server === "invasion" ? styles.cellInvasion : ""} ${on ? styles.cellOn : ""} ${readOnly ? styles.cellReadOnly : ""}`}
+                              style={tickColor ? { background: tickColor, color: readableTextColor(tickColor) } : undefined}
+                              className={`${styles.cell} ${entry.server === "invasion" ? styles.cellInvasion : ""} ${on ? styles.cellOn : ""} ${tickColor ? styles.cellOnAdmin : ""} ${readOnly ? styles.cellReadOnly : ""}`}
                             >
                               {on ? "✓" : ""}
                             </td>

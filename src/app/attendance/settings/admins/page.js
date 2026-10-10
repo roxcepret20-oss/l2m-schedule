@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { DEFAULT_ADMIN_COLORS, colorForAdmin } from "@/lib/adminColors";
 import styles from "../gear_score_formula/gear_score_formula.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -13,7 +14,28 @@ function getHeaders() {
   };
 }
 
-const EMPTY_FORM = { name: "", passcode: "" };
+// Empty color = "auto": the app picks a default from the admin's id.
+const EMPTY_FORM = { name: "", passcode: "", color: "" };
+
+function ColorField({ value, fallback, onChange, allowAuto = true }) {
+  return (
+    <span className={styles.colorField}>
+      <input
+        type="color"
+        className={styles.colorInput}
+        value={value || fallback}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="Tick color"
+        title="Color used for this admin's ticks"
+      />
+      {allowAuto && (value ? (
+        <button type="button" className={styles.linkBtn} onClick={() => onChange("")}>Use auto</button>
+      ) : (
+        <span className={styles.swatchLabel}>auto</span>
+      ))}
+    </span>
+  );
+}
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState([]);
@@ -34,6 +56,11 @@ export default function AdminsPage() {
   // Delete state
   const [deleteId, setDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // A color not used by any admin yet, so a new admin starts out distinguishable.
+  const suggestedColor =
+    DEFAULT_ADMIN_COLORS.find((c) => !admins.some((a) => colorForAdmin(a).toLowerCase() === c)) ??
+    DEFAULT_ADMIN_COLORS[admins.length % DEFAULT_ADMIN_COLORS.length];
 
   const fetchAdmins = useCallback(async () => {
     setLoading(true);
@@ -65,7 +92,7 @@ export default function AdminsPage() {
       const res = await fetch(`${API_BASE}/api/admins`, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ name: addForm.name.trim(), passcode: addForm.passcode }),
+        body: JSON.stringify({ name: addForm.name.trim(), passcode: addForm.passcode, color: addForm.color || suggestedColor }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -83,7 +110,7 @@ export default function AdminsPage() {
 
   function startEdit(admin) {
     setEditId(admin.id);
-    setEditForm({ name: admin.name, passcode: "" });
+    setEditForm({ name: admin.name, passcode: "", color: admin.color || "" });
     setEditError("");
   }
 
@@ -98,7 +125,7 @@ export default function AdminsPage() {
     setEditLoading(true);
     setEditError("");
     try {
-      const body = { name: editForm.name.trim() };
+      const body = { name: editForm.name.trim(), color: editForm.color || null };
       if (editForm.passcode) body.passcode = editForm.passcode;
       const res = await fetch(`${API_BASE}/api/admins/${editId}`, {
         method: "PUT",
@@ -168,6 +195,12 @@ export default function AdminsPage() {
             onChange={(e) => setAddForm((f) => ({ ...f, passcode: e.target.value }))}
             required
           />
+          <ColorField
+            allowAuto={false}
+            value={addForm.color}
+            fallback={suggestedColor}
+            onChange={(color) => setAddForm((f) => ({ ...f, color }))}
+          />
           <button
             type="submit"
             className={styles.btnPrimary}
@@ -192,6 +225,7 @@ export default function AdminsPage() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Color</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -210,6 +244,20 @@ export default function AdminsPage() {
                       />
                     ) : (
                       admin.name
+                    )}
+                  </td>
+                  <td>
+                    {editId === admin.id ? (
+                      <ColorField
+                        value={editForm.color}
+                        fallback={colorForAdmin({ id: admin.id })}
+                        onChange={(color) => setEditForm((f) => ({ ...f, color }))}
+                      />
+                    ) : (
+                      <>
+                        <span className={styles.swatch} style={{ background: colorForAdmin(admin) }} />
+                        {!admin.color && <span className={styles.swatchLabel}>auto</span>}
+                      </>
                     )}
                   </td>
                   <td>

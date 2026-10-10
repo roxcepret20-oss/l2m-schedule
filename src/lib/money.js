@@ -24,7 +24,8 @@ export function netReceived(paid, taxes) {
   return applyTaxChain(paid, taxes).net;
 }
 
-// diamonds = ROUND(grade value / total grade values * total diamonds), per member.
+// diamonds = FLOOR(grade value / total grade values * total diamonds), per member.
+// Rounding down guarantees we never pay out more than the pool; the leftover is the remainder (>= 0).
 export function distributeSalary(members, scores, totalDiamonds) {
   const valueOf = (grade) => scores[grade] || 0;
   const totalValues = members.reduce((sum, m) => sum + valueOf(m.grade), 0);
@@ -35,7 +36,7 @@ export function distributeSalary(members, scores, totalDiamonds) {
       member_id: m.member_id,
       grade: m.grade,
       share_percent: totalValues ? Math.round((value / totalValues) * 10000) / 100 : 0,
-      diamonds: totalValues ? mulDivRound(value, totalDiamonds, totalValues) : 0,
+      diamonds: totalValues ? Number((BigInt(value) * BigInt(totalDiamonds)) / BigInt(totalValues)) : 0,
     };
   });
 
