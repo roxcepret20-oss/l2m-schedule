@@ -218,7 +218,7 @@ function BossesTab() {
                     <td>{boss.name}</td>
                     <td>{boss.default_points}</td>
                     <td className={ui.mutedCell}>
-                      {boss.point_rules?.length ? boss.point_rules.map((r) => <span key={`${r.start_time}-${r.end_time}`} className={styles.ruleSummary}>{describeRule(r)}</span>) : "Global"}
+                      {boss.point_rules?.length ? boss.point_rules.map((r) => <span key={`${r.start_time}-${r.end_time}-${(r.days ?? []).join("")}`} className={styles.ruleSummary}>{describeRule(r)}</span>) : "Global"}
                     </td>
                     <td className={ui.mutedCell}>{boss.updated_by_name || "—"}</td>
                     <td>

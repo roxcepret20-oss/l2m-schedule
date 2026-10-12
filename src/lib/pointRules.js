@@ -2,7 +2,10 @@
 // windows are inclusive to the minute, start > end wraps midnight, the first matching rule wins and a boss's
 // own rules replace the global ones.
 
+import { DAY_SHORT } from "./weeks";
+
 export const MAX_RULES = 24;
+export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 export const timeToMinutes = (time) => {
   const [h, m] = String(time).split(":");
@@ -17,14 +20,25 @@ const windows = (rule) => {
   return start <= end ? [[start, end]] : [[start, 1439], [0, end]];
 };
 
-const overlaps = (a, b) => windows(a).some(([aFrom, aTo]) => windows(b).some(([bFrom, bTo]) => aFrom <= bTo && bFrom <= aTo));
+const ruleDays = (rule) => (rule.days?.length ? rule.days : ALL_DAYS);
+const sharesDay = (a, b) => ruleDays(a).some((d) => ruleDays(b).includes(d));
 
-export const emptyRule = () => ({ label: "", start_time: "00:00", end_time: "23:59", points: "10" });
+const overlaps = (a, b) =>
+  sharesDay(a, b) && windows(a).some(([aFrom, aTo]) => windows(b).some(([bFrom, bTo]) => aFrom <= bTo && bFrom <= aTo));
 
-export const toEditableRules = (rules) => (rules ?? []).map((r) => ({ ...r, points: String(r.points) }));
+export const emptyRule = () => ({ label: "", start_time: "00:00", end_time: "23:59", points: "10", days: [...ALL_DAYS] });
+
+export const toEditableRules = (rules) =>
+  (rules ?? []).map((r) => ({ ...r, points: String(r.points), days: [...ruleDays(r)].sort((a, b) => a - b) }));
 
 export const toPayloadRules = (rules) =>
-  rules.map((r) => ({ label: r.label.trim(), start_time: r.start_time, end_time: r.end_time, points: Number(r.points) }));
+  rules.map((r) => ({
+    label: r.label.trim(),
+    start_time: r.start_time,
+    end_time: r.end_time,
+    points: Number(r.points),
+    days: [...r.days].sort((a, b) => a - b),
+  }));
 
 // Returns an error message, or "" when the rules are valid.
 export function validateRules(rules) {
@@ -33,6 +47,7 @@ export function validateRules(rules) {
     const r = rules[i];
     if (!r.label.trim()) return `Rule ${i + 1}: label is required.`;
     if (!TIME_PATTERN.test(r.start_time) || !TIME_PATTERN.test(r.end_time)) return `Rule ${i + 1}: start and end time are required.`;
+    if (!r.days?.length) return `Rule ${i + 1}: pick at least one day.`;
     if (r.points === "" || !Number.isInteger(Number(r.points)) || Number(r.points) < 0) return `Rule ${i + 1}: points must be a whole number of 0 or more.`;
   }
   for (let i = 0; i < rules.length; i += 1) {
@@ -43,15 +58,23 @@ export function validateRules(rules) {
   return "";
 }
 
-// The rule that applies to a boss at "HH:MM", or null (then the boss's default points apply).
-export function findRule(time, boss, globalRules) {
+// The rule that applies to a boss at "HH:MM" on dayIndex (0 = Monday), or null (then the boss's default points apply).
+export function findRule(time, boss, globalRules, dayIndex) {
   if (!time) return null;
   const own = boss?.point_rules;
   const list = own && own.length > 0 ? own : globalRules ?? [];
   const minutes = timeToMinutes(time);
-  return list.find((rule) => windows(rule).some(([from, to]) => minutes >= from && minutes <= to)) ?? null;
+  return (
+    list.find(
+      (rule) =>
+        (dayIndex === undefined || ruleDays(rule).includes(dayIndex)) &&
+        windows(rule).some(([from, to]) => minutes >= from && minutes <= to)
+    ) ?? null
+  );
 }
 
-export const resolvePoints = (time, boss, globalRules) => findRule(time, boss, globalRules)?.points ?? boss.default_points;
+export const resolvePoints = (time, boss, globalRules, dayIndex) => findRule(time, boss, globalRules, dayIndex)?.points ?? boss.default_points;
 
-export const describeRule = (r) => `${r.label}: ${r.start_time}–${r.end_time} → ${r.points}p`;
+export const daysLabel = (rule) => (ruleDays(rule).length === 7 ? "Every day" : ruleDays(rule).map((d) => DAY_SHORT[d]).join(", "));
+
+export const describeRule = (r) => `${r.label}: ${r.start_time}–${r.end_time}, ${daysLabel(r)} → ${r.points}p`;

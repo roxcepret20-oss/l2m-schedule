@@ -1,6 +1,7 @@
 "use client";
 
 import { emptyRule, validateRules, MAX_RULES } from "@/lib/pointRules";
+import { DAY_SHORT } from "@/lib/weeks";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-settings.module.css";
 
@@ -10,6 +11,11 @@ export default function PointRulesEditor({ rules, onChange, idPrefix }) {
 
   function update(index, patch) {
     onChange(rules.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  function toggleDay(index, day) {
+    const days = rules[index].days;
+    update(index, { days: days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort((a, b) => a - b) });
   }
 
   return (
@@ -22,12 +28,24 @@ export default function PointRulesEditor({ rules, onChange, idPrefix }) {
             <span>Label</span><span>From</span><span>To (inclusive)</span><span>Points</span><span />
           </div>
           {rules.map((rule, i) => (
-            <div key={i} className={styles.ruleRow}>
-              <input className={`${ui.input} ${ui.inputSm}`} value={rule.label} maxLength={60} placeholder="e.g. Night" onChange={(e) => update(i, { label: e.target.value })} aria-label={`Rule ${i + 1} label`} id={`${idPrefix}-label-${i}`} />
-              <input type="time" className={`${ui.input} ${ui.inputSm}`} value={rule.start_time} onChange={(e) => update(i, { start_time: e.target.value })} aria-label={`Rule ${i + 1} from`} />
-              <input type="time" className={`${ui.input} ${ui.inputSm}`} value={rule.end_time} onChange={(e) => update(i, { end_time: e.target.value })} aria-label={`Rule ${i + 1} to`} />
-              <input type="number" min="0" step="1" className={`${ui.input} ${ui.inputSm}`} value={rule.points} onChange={(e) => update(i, { points: e.target.value })} aria-label={`Rule ${i + 1} points`} />
-              <button type="button" className={ui.btnDelete} onClick={() => onChange(rules.filter((_, idx) => idx !== i))} aria-label={`Remove rule ${i + 1}`}>Remove</button>
+            <div key={i} className={styles.ruleItem}>
+              <div className={styles.ruleRow}>
+                <input className={`${ui.input} ${ui.inputSm}`} value={rule.label} maxLength={60} placeholder="e.g. Night" onChange={(e) => update(i, { label: e.target.value })} aria-label={`Rule ${i + 1} label`} id={`${idPrefix}-label-${i}`} />
+                <input type="time" className={`${ui.input} ${ui.inputSm}`} value={rule.start_time} onChange={(e) => update(i, { start_time: e.target.value })} aria-label={`Rule ${i + 1} from`} />
+                <input type="time" className={`${ui.input} ${ui.inputSm}`} value={rule.end_time} onChange={(e) => update(i, { end_time: e.target.value })} aria-label={`Rule ${i + 1} to`} />
+                <input type="number" min="0" step="1" className={`${ui.input} ${ui.inputSm}`} value={rule.points} onChange={(e) => update(i, { points: e.target.value })} aria-label={`Rule ${i + 1} points`} />
+                <button type="button" className={ui.btnDelete} onClick={() => onChange(rules.filter((_, idx) => idx !== i))} aria-label={`Remove rule ${i + 1}`}>Remove</button>
+              </div>
+              <div className={styles.dayChips} role="group" aria-label={`Rule ${i + 1} days`}>
+                {DAY_SHORT.map((name, day) => {
+                  const on = rule.days.includes(day);
+                  return (
+                    <button key={day} type="button" aria-pressed={on} className={`${styles.dayChip} ${on ? styles.dayChipOn : ""}`} onClick={() => toggleDay(i, day)}>
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>

@@ -672,6 +672,7 @@ export default function AttendanceDetailPage() {
       {modal?.type === "bulk" && (
         <BulkBossModal
           dayLabel={DAY_NAMES[tab]}
+          dayIndex={tab}
           onClose={() => setModal(null)}
           onSubmit={async (items) => {
             const created = await apiFetch(`/api/attendances/${attendanceId}/entries/bulk`, {
@@ -1052,7 +1053,7 @@ function EntryModal({ title, initial, withName, submitLabel, note, onClose, onSu
   );
 }
 
-function BulkBossModal({ dayLabel, onClose, onSubmit }) {
+function BulkBossModal({ dayLabel, dayIndex, onClose, onSubmit }) {
   const [bosses, setBosses] = useState(null);
   const [globalRules, setGlobalRules] = useState([]);
   const [loadError, setLoadError] = useState("");
@@ -1075,7 +1076,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
   const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: null, server: "ours" };
   const pointsFor = (boss) => {
     const row = rowFor(boss);
-    return row.points ?? String(resolvePoints(row.time, boss, globalRules));
+    return row.points ?? String(resolvePoints(row.time, boss, globalRules, dayIndex));
   };
   const update = (boss, patch) => setRows((prev) => ({ ...prev, [boss.id]: { ...rowFor(boss), ...patch } }));
 
@@ -1128,7 +1129,7 @@ function BulkBossModal({ dayLabel, onClose, onSubmit }) {
                   <option value="invasion">Invasion</option>
                 </select>
                 <input type="time" className={`${ui.input} ${styles.bulkField}`} value={row.time} onChange={(e) => update(boss, { time: e.target.value, checked: true })} aria-label={`${boss.name} time`} />
-                <input type="number" min="0" className={`${ui.input} ${styles.bulkField}`} value={pointsFor(boss)} title={findRule(row.time, boss, globalRules)?.label ?? "Default points"} onChange={(e) => update(boss, { points: e.target.value })} aria-label={`${boss.name} points`} />
+                <input type="number" min="0" className={`${ui.input} ${styles.bulkField}`} value={pointsFor(boss)} title={findRule(row.time, boss, globalRules, dayIndex)?.label ?? "Default points"} onChange={(e) => update(boss, { points: e.target.value })} aria-label={`${boss.name} points`} />
               </div>
             );
           })}
