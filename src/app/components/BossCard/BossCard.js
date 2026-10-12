@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./BossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
+import { getBossPoints } from "../../../lib/bossPoints";
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
   if (spawn instanceof Date) return spawn;
@@ -49,15 +50,7 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0)
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
 
-  const baseDate = spawnDate ?? new Date();
-  const wibMs = baseDate.getTime()
-    + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
-    - tzOffset * 60 * 60 * 1000;
-  const wibDate = new Date(wibMs);
-  const hour = wibDate.getHours();
-
-  // Flat time-based rule, regardless of day/ffaMode: 00:00-08:00 => 10 pts, 08:01-23:59 => 3 pts.
-  return { points: hour < 8 ? 10 : 3, label: cat };
+  return { points: getBossPoints(spawnDate, tzOffset), label: cat };
 }
 
 function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL") {

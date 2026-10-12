@@ -2,6 +2,8 @@
 // chronological timeline, then splits that timeline into "pipelines" (chains)
 // wherever the gap between two consecutive spawns exceeds GAP_MS.
 
+import { getBossPoints } from "./bossPoints";
+
 export const PIPELINE_GAP_MS = 10 * 60 * 1000; // 10 minutes
 const EXPIRY_MS = 2 * 60 * 1000; // keep items visible until 2min after spawn
 
@@ -54,21 +56,12 @@ function tagForBoss(boss) {
   return null;
 }
 
-// Ported from BossCard.js's getPointsInfo so the pipeline page shows the
-// exact same points a boss would award on the boss list (same category and hour).
-function getBossPoints(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
+// Same rule as the boss list cards (see lib/bossPoints.js), so the pipeline shows the
+// exact same points a boss would award there.
+function getPipelineBossPoints(boss, spawnDate = null, tzOffset = 0) {
   const cat = boss.category;
   if (cat !== "ffa" && cat !== "red") return null;
-
-  const baseDate = spawnDate ?? new Date();
-  const wibMs = baseDate.getTime()
-    + (7 * 60 + baseDate.getTimezoneOffset()) * 60 * 1000
-    - tzOffset * 60 * 60 * 1000;
-  const wibDate = new Date(wibMs);
-  const hour = wibDate.getHours();
-
-  // Flat time-based rule, regardless of day/ffaMode: 00:00-08:00 => 10 pts, 08:01-23:59 => 3 pts.
-  return hour < 8 ? 10 : 3;
+  return getBossPoints(spawnDate, tzOffset);
 }
 
 function normalizePoints(rawPoints) {
@@ -102,7 +95,7 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMo
         category: b.category,
         type: b.type,
         tag: tagForBoss(b),
-        points: normalizePoints(getBossPoints(b, ffaMode, spawnDate, tzOffset)),
+        points: normalizePoints(getPipelineBossPoints(b, spawnDate, tzOffset)),
         spawnDate,
         raw: b,
       };
