@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import styles from "./dashboard.module.css";
+import MemberMenu from "../MemberMenu";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -173,9 +174,7 @@ export default function UserDashboardPage() {
           <p className={styles.subtitle}>Manage your own stats and gear proof</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.btnGhost} onClick={() => router.push("/leaderboard")}>
-            Leaderboard
-          </button>
+          <MemberMenu />
           <button className={styles.btnGhost} onClick={handleLogout}>
             Logout
           </button>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getDefenseStat } from "../../lib/memberStats";
 import styles from "./leaderboard.module.css";
+import MemberMenu from "../users/MemberMenu";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -99,9 +100,12 @@ export default function LeaderboardPage() {
           <h1 className={styles.title}>Leaderboard</h1>
           <p className={styles.subtitle}>Your clan members ranked by gear score</p>
         </div>
-        <button className={styles.btnGhost} onClick={handleBack}>
-          ← My Profile
-        </button>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <MemberMenu />
+          <button className={styles.btnGhost} onClick={handleBack}>
+            ← My Profile
+          </button>
+        </div>
       </div>
 
       {error && <p className={styles.errorText}>{error}</p>}

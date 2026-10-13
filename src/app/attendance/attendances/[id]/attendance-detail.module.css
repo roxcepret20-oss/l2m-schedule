@@ -75,10 +75,29 @@
   background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
 }
 
+/* Invasion colours for this table. Light mode needs a stronger tint than the app-wide --invasion-bg to stand out on white;
+   dark mode keeps the app palette. Mirrors the theme selectors of globals.css. */
+.matrixWrap {
+  --inv-bg: #E4D6FE;
+  --inv-border: #8B5CF6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .matrixWrap {
+    --inv-bg: var(--invasion-bg);
+    --inv-border: var(--invasion-border);
+  }
+}
+
+:global(html[data-theme="dark"]) .matrixWrap {
+  --inv-bg: var(--invasion-bg);
+  --inv-border: var(--invasion-border);
+}
+
 /* Boss entries from the Invasion server use the app's invasion palette. */
 .colHeadInvasion {
-  background: var(--invasion-bg);
-  border-bottom-color: var(--invasion-border) !important;
+  background: var(--inv-bg);
+  border-bottom-color: var(--inv-border) !important;
 }
 
 .colName {
@@ -254,11 +273,11 @@
 }
 
 .cellInvasion {
-  background: var(--invasion-bg);
+  background: var(--inv-bg);
 }
 
 .cellInvasion:hover {
-  background: color-mix(in srgb, var(--invasion-border) 40%, var(--invasion-bg));
+  background: color-mix(in srgb, var(--inv-border) 40%, var(--inv-bg));
 }
 
 .cellInvasion.cellOn {
@@ -275,7 +294,7 @@
 }
 
 .cellInvasion.cellOnAdmin {
-  box-shadow: inset 0 0 0 2px var(--invasion-border);
+  box-shadow: inset 0 0 0 2px var(--inv-border);
 }
 
 .legend {

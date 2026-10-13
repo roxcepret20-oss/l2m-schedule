@@ -1,0 +1,41 @@
+/* Sticky member column of the read-only matrix: fixed width so the points/grade badge never spills into the first boss column. */
+.memberCell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 240px;
+  min-width: 240px;
+  text-align: left !important;
+  background: var(--card-bg);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 240px;
+  padding: 5px 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.memberName {
+  max-width: 132px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex-shrink: 0;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--muted);
+}
