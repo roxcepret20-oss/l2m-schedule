@@ -103,6 +103,7 @@ export default function ParticipantsModal({ entry, clanName, members, tickedIds,
     <Modal
       title={`Import participants – ${entry.name}`}
       wide
+      persistent
       onClose={saving ? () => {} : processing ? cancelProcessing : onClose}
       footer={
         <>

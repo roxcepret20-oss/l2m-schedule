@@ -3,17 +3,19 @@
 import { useEffect } from "react";
 import ui from "./attendance-ui.module.css";
 
-export function Modal({ title, onClose, children, footer, wide = false }) {
+// persistent: ignore backdrop clicks and Escape, so unsaved input (e.g. picked images) is not lost by accident.
+export function Modal({ title, onClose, children, footer, wide = false, persistent = false }) {
   useEffect(() => {
+    if (persistent) return undefined;
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, persistent]);
 
   return (
-    <div className={ui.modalOverlay} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className={ui.modalOverlay} onMouseDown={(e) => !persistent && e.target === e.currentTarget && onClose()}>
       <div className={`${ui.modal} ${wide ? ui.modalWide : ""}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className={ui.modalHeader}>
           <h2 className={ui.modalTitle}>{title}</h2>
