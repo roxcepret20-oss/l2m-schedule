@@ -294,9 +294,12 @@ export default function AttendanceDetailPage() {
     return sheet ? sheet.members.filter((m) => !q || m.ign.toLowerCase().includes(q)) : [];
   }, [sheet, search]);
 
+  // Row ticks cover the bosses only; events are ticked individually.
   const toggleRow = (memberId) => {
-    const all = dayEntries.every((e) => e.member_ids.includes(memberId));
-    tickCells(dayEntries.map((e) => ({ entryId: e.id, memberId })), !all);
+    const bosses = dayEntries.filter((e) => e.kind !== "event");
+    if (bosses.length === 0) return;
+    const all = bosses.every((e) => e.member_ids.includes(memberId));
+    tickCells(bosses.map((e) => ({ entryId: e.id, memberId })), !all);
   };
 
   const toggleColumn = (entry) => {
@@ -570,7 +573,7 @@ export default function AttendanceDetailPage() {
                     return (
                       <tr key={member.id}>
                         <td className={styles.memberCell}>
-                          <button className={styles.memberBtn} disabled={readOnly} onClick={() => toggleRow(member.id)} title={`Tick or untick ${member.ign} for the whole of ${DAY_NAMES[tab]}`}>
+                          <button className={styles.memberBtn} disabled={readOnly} onClick={() => toggleRow(member.id)} title={`Tick or untick all bosses of ${member.ign} for ${DAY_NAMES[tab]} (events excluded)`}>
                             {member.ign}
                             <span className={styles.memberStat}>
                               {stat?.points ?? 0}
@@ -613,7 +616,7 @@ export default function AttendanceDetailPage() {
           )}
 
           <p className={ui.hint}>
-            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick the whole row for this day · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · ★ = event · arrow keys + Space also work.
+            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick all bosses in the row for this day (events are not included) · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · ★ = event · arrow keys + Space also work.
           </p>
         </>
       )}
