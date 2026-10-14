@@ -731,6 +731,7 @@ export default function AttendanceDetailPage() {
 function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap }) {
   const [gearById, setGearById] = useState(null);
   const [gearError, setGearError] = useState("");
+  const [sortBy, setSortBy] = useState("points");
 
   useEffect(() => {
     let cancelled = false;
@@ -765,8 +766,10 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
       const gear = gearById?.get(s.member_id) ?? 0;
       return { ...s, gear, totalScore: gear + (sheet.grade_scores[s.grade] ?? 0) };
     });
-    return list.sort((a, b) => b.totalScore - a.totalScore || b.points - a.points || a.ign.localeCompare(b.ign));
-  }, [standings, gearById, sheet.grade_scores]);
+    const byPoints = (a, b) => b.points - a.points || b.totalScore - a.totalScore || a.ign.localeCompare(b.ign);
+    const byTotal = (a, b) => b.totalScore - a.totalScore || b.points - a.points || a.ign.localeCompare(b.ign);
+    return list.sort(sortBy === "total" ? byTotal : byPoints);
+  }, [standings, gearById, sheet.grade_scores, sortBy]);
 
   const t = sheet.thresholds;
   const sc = sheet.grade_scores;
@@ -784,6 +787,13 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
         <div className={ui.stat}><span>Target = full ÷ handicap</span><b>{fmt(targetScore)}</b></div>
       </div>
       <h2 className={ui.sectionTitle} style={{ marginBottom: 14 }}>Weekly summary – points per day, grade &amp; total score</h2>
+      <label className={ui.hint} style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        Sort by
+        <select className={ui.select} style={{ width: "auto" }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="points">Points</option>
+          <option value="total">Total Score</option>
+        </select>
+      </label>
       {gearError && <div className={ui.banner}>Gear score could not be loaded ({gearError}). Total Score only includes the grade value.</div>}
       <div className={ui.tableWrapper}>
         <table className={ui.table}>
@@ -821,7 +831,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
         % of target = points ÷ (full attendance score ÷ handicap), not capped. S ≥ {t.S}% · A ≥ {t.A}% · B ≥ {t.B}% · C ≥ {t.C}% · D ≥ {t.D}% · E below.
         {sheet.status === "done" ? " Saved when this attendance was settled." : " Updates live as you tick."}
         <br />
-        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}), sorted highest first.
+        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}). Sorted highest first by {sortBy === "total" ? "Total Score" : "Points"}.
       </p>
     </div>
   );
