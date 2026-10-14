@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { memberApiFetch } from "@/lib/memberAttendanceApi";
 import { distributeSalary, formatDiamonds } from "@/lib/money";
 import { getGearScore } from "@/lib/gearScore";
+import { computeStandings } from "@/lib/attendanceStandings";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import ui from "../../../attendance/components/attendance-ui.module.css";
 import styles from "../../../attendance/attendances/[id]/attendance-detail.module.css";
@@ -19,7 +20,13 @@ const byBossThenEvent = (a, b) =>
 
 export default function MemberAttendanceDetailPage() {
   const { id } = useParams();
-  const [sheet, setSheet] = useState(null);
+  const [rawSheet, setSheet] = useState(null);
+  // Standings and full score are recomputed here with the same rules as the admin area (empty entries don't count).
+  const sheet = useMemo(() => {
+    if (!rawSheet) return null;
+    const { standings, fullScore } = computeStandings(rawSheet.members, rawSheet.days, rawSheet.thresholds, rawSheet.handicap);
+    return { ...rawSheet, standings, full_score: fullScore };
+  }, [rawSheet]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [tab, setTab] = useState(0);
