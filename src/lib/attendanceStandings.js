@@ -1,7 +1,7 @@
 export const GRADE_ORDER = ["S", "A", "B", "C", "D"];
 export const DEFAULT_THRESHOLDS = { S: 90, A: 80, B: 60, C: 40, D: 30 };
 
-// Same rules as the API. The target is the full attendance score (every entry of the week) divided by the handicap.
+// Same rules as the API. The target is the full attendance score (every entry of the week with at least one tick) divided by the handicap.
 export function targetScore(fullScore, handicap) {
   return fullScore / handicap;
 }
@@ -30,7 +30,8 @@ export function computeStandings(members, days, thresholds, handicap) {
   days.forEach((day) =>
     day.entries.forEach((entry) => {
       const value = Number(entry.points) || 0;
-      fullScore += value;
+      // Entries nobody was ticked on (boss/event did not happen) are left out of the full score.
+      if (entry.member_ids.length > 0) fullScore += value;
       entry.member_ids.forEach((memberId) => {
         if (points.has(memberId)) points.set(memberId, points.get(memberId) + value);
       });

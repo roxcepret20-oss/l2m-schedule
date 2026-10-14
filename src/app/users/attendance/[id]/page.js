@@ -242,7 +242,7 @@ function SummaryView({ sheet, onlyMe, myId }) {
   return (
     <div className={ui.card}>
       <div className={ui.stats}>
-        <div className={ui.stat}><span>Full attendance score (all bosses + events)</span><b>{fmt(sheet.full_score)}</b></div>
+        <div className={ui.stat}><span>Full attendance score (bosses + events with at least 1 tick)</span><b>{fmt(sheet.full_score)}</b></div>
       </div>
       <h2 className={ui.sectionTitle} style={{ marginBottom: 14 }}>Weekly summary – points per day, grade &amp; total score</h2>
       {gearError && <div className={ui.banner}>Gear score could not be loaded ({gearError}). Total Score only includes the grade value.</div>}

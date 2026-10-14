@@ -775,7 +775,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
   return (
     <div className={ui.card}>
       <div className={ui.stats}>
-        <div className={ui.stat}><span>Full attendance score (all bosses + events)</span><b>{fmt(fullScore)}</b></div>
+        <div className={ui.stat}><span>Full attendance score (bosses + events with at least 1 tick)</span><b>{fmt(fullScore)}</b></div>
         <div className={ui.stat}>
           <span>Handicap</span>
           <b>{sheet.handicap}</b>
