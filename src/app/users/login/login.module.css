@@ -65,6 +65,27 @@
   margin: 0;
 }
 
+.success {
+  font-size: 13px;
+  color: #22c55e;
+  margin: 0;
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  text-decoration: underline;
+}
+
 .btn {
   padding: 12px;
   background: var(--accent);
