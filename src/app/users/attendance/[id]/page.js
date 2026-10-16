@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { memberApiFetch } from "@/lib/memberAttendanceApi";
 import { distributeSalary, formatDiamonds } from "@/lib/money";
 import { getGearScore } from "@/lib/gearScore";
+import { computeStandings } from "@/lib/attendanceStandings";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import ui from "../../../attendance/components/attendance-ui.module.css";
 import styles from "../../../attendance/attendances/[id]/attendance-detail.module.css";
@@ -21,8 +22,13 @@ const byBossThenEvent = (a, b) =>
 
 export default function MemberAttendanceDetailPage() {
   const { id } = useParams();
-  // Standings and full score come from the API: it applies the handicap, which members never receive.
-  const [sheet, setSheet] = useState(null);
+  const [rawSheet, setSheet] = useState(null);
+  // Standings and full score are recomputed here with the same rules as the admin area (empty entries don't count).
+  const sheet = useMemo(() => {
+    if (!rawSheet) return null;
+    const { standings, fullScore, targetScore } = computeStandings(rawSheet.members, rawSheet.days, rawSheet.thresholds, rawSheet.handicap);
+    return { ...rawSheet, standings, full_score: fullScore, target_score: targetScore };
+  }, [rawSheet]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [tab, setTab] = useState(0);
@@ -254,6 +260,8 @@ function SummaryView({ sheet, onlyMe, myId }) {
     <div className={ui.card}>
       <div className={ui.stats}>
         <div className={ui.stat}><span>Full attendance score (bosses + events with at least 1 tick)</span><b>{fmt(sheet.full_score)}</b></div>
+        <div className={ui.stat}><span>Handicap</span><b>{sheet.handicap}</b></div>
+        <div className={ui.stat}><span>Target = full ÷ handicap</span><b>{fmt(sheet.target_score)}</b></div>
       </div>
       <h2 className={ui.sectionTitle} style={{ marginBottom: 14 }}>Weekly summary – points per day, grade &amp; total score</h2>
       <label className={ui.hint} style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
