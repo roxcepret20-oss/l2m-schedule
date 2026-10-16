@@ -1,0 +1,45 @@
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.taxRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.taxRow:last-child {
+  border-bottom: none;
+}
+
+.preview {
+  background: var(--main-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkRow input {
+  accent-color: var(--accent);
+}

@@ -12,14 +12,22 @@ import { findRule, resolvePoints } from "@/lib/pointRules";
 import { DAY_NAMES, DAY_SHORT, formatShortDate, formatWeek } from "@/lib/weeks";
 import { Modal, ConfirmModal } from "../../components/Modal";
 import ParticipantsModal from "./ParticipantsModal";
+import IncomeView from "./IncomeView";
 import LogsView from "./LogsView";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
 const SUMMARY_TAB = 7;
 const LOGS_TAB = "logs";
+const INCOME_TAB = "income";
 const OUTDATED_API_MESSAGE =
-  "The API server is running old code (it does not return handicap/salaries). Restart the API server, then refresh this page.";
+  "The API server is running old code (it does not return handicap/salaries/income). Restart the API server, then refresh this page.";
+
+const withIncomeTotals = (items) => ({
+  items,
+  total_amount: items.reduce((sum, i) => sum + i.amount, 0),
+  total_after_tax: items.reduce((sum, i) => sum + i.after_tax, 0),
+});
 // Bosses first (by time), events last (by time), so events always sit in the right-most columns.
 const byBossThenEvent = (a, b) =>
   (a.kind === "event") - (b.kind === "event") || a.time.localeCompare(b.time) || a.id - b.id;
@@ -55,7 +63,7 @@ export default function AttendanceDetailPage() {
       setLoadError("");
       try {
         const data = await apiFetch(`/api/attendances/${attendanceId}`);
-        if (typeof data.handicap !== "number" || !Array.isArray(data.salaries)) throw new Error(OUTDATED_API_MESSAGE);
+        if (typeof data.handicap !== "number" || !Array.isArray(data.salaries) || !data.income) throw new Error(OUTDATED_API_MESSAGE);
         setSheet(data);
       } catch (err) {
         setLoadError(err.message);
@@ -69,6 +77,12 @@ export default function AttendanceDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Taxes offered when adding income (Settings → Tax); the form shows an empty list if this fails.
+  const [taxes, setTaxes] = useState([]);
+  useEffect(() => {
+    apiFetch("/api/loan-taxes").then((list) => setTaxes([...list].sort((a, b) => a.id - b.id))).catch(() => {});
+  }, []);
 
   const readOnly = sheet?.status === "inactive";
 
@@ -389,6 +403,22 @@ export default function AttendanceDetailPage() {
     }
   }
 
+  const incomeEditor = {
+    taxes,
+    onCreate: async (body) => {
+      const created = await apiFetch(`/api/attendances/${attendanceId}/income`, { method: "POST", body });
+      setSheet((prev) => prev && { ...prev, income: withIncomeTotals([...prev.income.items, created]) });
+    },
+    onUpdate: async (itemId, body) => {
+      const saved = await apiFetch(`/api/attendances/${attendanceId}/income/${itemId}`, { method: "PUT", body });
+      setSheet((prev) => prev && { ...prev, income: withIncomeTotals(prev.income.items.map((i) => (i.id === itemId ? saved : i))) });
+    },
+    onDelete: async (itemId) => {
+      await apiFetch(`/api/attendances/${attendanceId}/income/${itemId}`, { method: "DELETE" });
+      setSheet((prev) => prev && { ...prev, income: withIncomeTotals(prev.income.items.filter((i) => i.id !== itemId)) });
+    },
+  };
+
   /* ───────────── render ───────────── */
 
   if (loading) {
@@ -468,6 +498,9 @@ export default function AttendanceDetailPage() {
         <button role="tab" aria-selected={tab === LOGS_TAB} className={`${ui.tab} ${tab === LOGS_TAB ? ui.tabActive : ""}`} onClick={() => setTab(LOGS_TAB)}>
           📜 Logs
         </button>
+        <button role="tab" aria-selected={tab === INCOME_TAB} className={`${ui.tab} ${tab === INCOME_TAB ? ui.tabActive : ""}`} onClick={() => setTab(INCOME_TAB)}>
+          💰 Income
+        </button>
         {sheet.salaries.map((salary) => (
           <button key={salary.id} role="tab" aria-selected={tab === `salary-${salary.id}`} className={`${ui.tab} ${tab === `salary-${salary.id}` ? ui.tabActive : ""}`} onClick={() => setTab(`salary-${salary.id}`)}>
             💎 {salary.name}
@@ -480,6 +513,8 @@ export default function AttendanceDetailPage() {
 
       {tab === LOGS_TAB ? (
         <LogsView attendanceId={attendanceId} admins={sheet.admins ?? []} />
+      ) : tab === INCOME_TAB ? (
+        <IncomeView income={sheet.income} editor={readOnly ? undefined : incomeEditor} />
       ) : tab === SUMMARY_TAB ? (
         <SummaryView sheet={sheet} standings={standings} fullScore={fullScore} targetScore={targetScore} onEditHandicap={readOnly ? null : () => setModal({ type: "rename" })} />
       ) : activeSalary ? (
@@ -489,6 +524,7 @@ export default function AttendanceDetailPage() {
           sheet={sheet}
           standings={standings}
           readOnly={readOnly}
+          incomeTotal={sheet.income.total_after_tax}
           onSave={saveSalary}
           onDelete={() => setModal({ type: "deleteSalary", salary: activeSalary })}
         />
@@ -839,7 +875,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
 
 /* ───────────── Modals ───────────── */
 
-function SalaryView({ salary, sheet, standings, readOnly, onSave, onDelete }) {
+function SalaryView({ salary, sheet, standings, readOnly, incomeTotal, onSave, onDelete }) {
   const [name, setName] = useState(salary.name);
   const [total, setTotal] = useState(String(salary.total_diamonds));
   const [state, setState] = useState("");
@@ -883,6 +919,11 @@ function SalaryView({ salary, sheet, standings, readOnly, onSave, onDelete }) {
     if (typedTotal !== salary.total_diamonds) commit({ total_diamonds: typedTotal }, () => setTotal(String(salary.total_diamonds)));
   }
 
+  function copyIncomeTotal() {
+    setTotal(String(incomeTotal));
+    if (incomeTotal !== salary.total_diamonds) commit({ total_diamonds: incomeTotal }, () => setTotal(String(salary.total_diamonds)));
+  }
+
   function commitName() {
     const next = name.trim();
     if (!next) {
@@ -907,6 +948,17 @@ function SalaryView({ salary, sheet, standings, readOnly, onSave, onDelete }) {
             <label className={ui.label} htmlFor="salary-total">Total diamonds to distribute</label>
             <input id="salary-total" type="number" min="0" step="1" className={ui.input} value={total} disabled={readOnly} onChange={(e) => { setState(""); setTotal(e.target.value); }} onBlur={commitTotal} onKeyDown={enterToBlur} />
           </div>
+          {!readOnly && (
+            <button
+              type="button"
+              className={`${ui.btnGhost} ${ui.btnSm}`}
+              style={{ alignSelf: "flex-end", marginBottom: 6 }}
+              onClick={copyIncomeTotal}
+              title="Set the total to the after-tax total of the Income tab"
+            >
+              ⇩ Copy from Income ({formatDiamonds(incomeTotal)} 💎)
+            </button>
+          )}
           <span className={ui.muted}>{state === "saving" ? "Saving…" : state === "saved" ? "Saved." : ""}</span>
           {!readOnly && (
             <button className={ui.btnDelete} style={{ marginLeft: "auto" }} onClick={onDelete}>Delete this salary</button>

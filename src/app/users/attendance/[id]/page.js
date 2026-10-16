@@ -12,8 +12,10 @@ import ui from "../../../attendance/components/attendance-ui.module.css";
 import styles from "../../../attendance/attendances/[id]/attendance-detail.module.css";
 import local from "./member-attendance.module.css";
 import MemberMenu from "../../MemberMenu";
+import IncomeView from "../../../attendance/attendances/[id]/IncomeView";
 
 const SUMMARY_TAB = 7;
+const INCOME_TAB = "income";
 // Bosses first (by time), events last (by time), same order as the admin view.
 const byBossThenEvent = (a, b) =>
   (a.kind === "event") - (b.kind === "event") || a.time.localeCompare(b.time) || a.id - b.id;
@@ -114,6 +116,9 @@ export default function MemberAttendanceDetailPage() {
         <button role="tab" aria-selected={tab === SUMMARY_TAB} className={`${ui.tab} ${tab === SUMMARY_TAB ? ui.tabActive : ""}`} onClick={() => setTab(SUMMARY_TAB)}>
           Σ Summary &amp; grades
         </button>
+        <button role="tab" aria-selected={tab === INCOME_TAB} className={`${ui.tab} ${tab === INCOME_TAB ? ui.tabActive : ""}`} onClick={() => setTab(INCOME_TAB)}>
+          💰 Income
+        </button>
         {sheet.salaries.map((salary) => (
           <button key={salary.id} role="tab" aria-selected={tab === `salary-${salary.id}`} className={`${ui.tab} ${tab === `salary-${salary.id}` ? ui.tabActive : ""}`} onClick={() => setTab(`salary-${salary.id}`)}>
             💎 {salary.name}
@@ -141,6 +146,8 @@ export default function MemberAttendanceDetailPage() {
 
       {tab === SUMMARY_TAB ? (
         <SummaryView sheet={sheet} onlyMe={onlyMe} myId={myId} />
+      ) : tab === INCOME_TAB ? (
+        <IncomeView income={sheet.income} />
       ) : activeSalary ? (
         <SalaryView key={activeSalary.id} salary={activeSalary} sheet={sheet} onlyMe={onlyMe} myId={myId} />
       ) : dayEntries.length === 0 ? (
