@@ -1,0 +1,94 @@
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  background: var(--main-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.bulkLabel {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.results {
+  max-height: 46vh;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 100px 28px;
+  grid-template-areas:
+    "chk name amount rm"
+    ". taxes net net";
+  gap: 6px 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.row > :nth-child(1) { grid-area: chk; }
+.row > :nth-child(2) { grid-area: name; }
+.row > :nth-child(3) { grid-area: amount; }
+.row > :nth-child(4) { grid-area: taxes; }
+.row > :nth-child(5) { grid-area: net; }
+.row > :nth-child(6) { grid-area: rm; }
+
+.rowOff {
+  opacity: 0.5;
+}
+
+.taxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.taxCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.taxCheck input,
+.row > input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.net {
+  text-align: right;
+  font-weight: 700;
+}
+
+.invalid {
+  border-color: #d9534f !important;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 18px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .row {
+    grid-template-columns: 22px minmax(0, 1fr) 90px 28px;
+  }
+}

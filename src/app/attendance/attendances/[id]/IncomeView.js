@@ -5,6 +5,7 @@ import { applyTaxChain, formatDiamonds } from "@/lib/money";
 import { Modal, ConfirmModal } from "../../components/Modal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./income-view.module.css";
+import IncomeImportModal from "./IncomeImportModal";
 
 export const taxLabel = (item) =>
   item.taxes.length === 0 ? "No tax" : item.taxes.map((t) => `${t.name} ${t.percent}%`).join(" + ");
@@ -44,7 +45,12 @@ export default function IncomeView({ income, editor }) {
       <div className={ui.card}>
         <div className={styles.head}>
           <h2 className={ui.sectionTitle} style={{ margin: 0 }}>Income sources</h2>
-          {editor && <button className={`${ui.btnPrimary} ${ui.btnSm}`} onClick={() => setModal({ type: "form", item: null })}>+ Add income</button>}
+          {editor && (
+            <div className={styles.headActions}>
+              <button className={`${ui.btnGhost} ${ui.btnSm}`} onClick={() => setModal({ type: "import" })}>📷 Import from screenshot</button>
+              <button className={`${ui.btnPrimary} ${ui.btnSm}`} onClick={() => setModal({ type: "form", item: null })}>+ Add income</button>
+            </div>
+          )}
         </div>
         {error && <p className={ui.errorText}>{error}</p>}
         {items.length === 0 ? (
@@ -108,6 +114,9 @@ export default function IncomeView({ income, editor }) {
             setModal(null);
           }}
         />
+      )}
+      {editor && modal?.type === "import" && (
+        <IncomeImportModal taxes={editor.taxes} onCreate={editor.onCreate} onClose={() => setModal(null)} />
       )}
       {editor && modal?.type === "delete" && (
         <ConfirmModal
