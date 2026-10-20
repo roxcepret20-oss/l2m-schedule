@@ -14,12 +14,14 @@ import { Modal, ConfirmModal } from "../../components/Modal";
 import ParticipantsModal from "./ParticipantsModal";
 import IncomeView from "./IncomeView";
 import LogsView from "./LogsView";
+import CheckSsView from "./CheckSsView";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
 const SUMMARY_TAB = 7;
 const LOGS_TAB = "logs";
 const INCOME_TAB = "income";
+const CHECK_SS_TAB = "check-ss";
 const OUTDATED_API_MESSAGE =
   "The API server is running old code (it does not return handicap/salaries/income). Restart the API server, then refresh this page.";
 
@@ -501,6 +503,9 @@ export default function AttendanceDetailPage() {
         <button role="tab" aria-selected={tab === INCOME_TAB} className={`${ui.tab} ${tab === INCOME_TAB ? ui.tabActive : ""}`} onClick={() => setTab(INCOME_TAB)}>
           💰 Income
         </button>
+        <button role="tab" aria-selected={tab === CHECK_SS_TAB} className={`${ui.tab} ${tab === CHECK_SS_TAB ? ui.tabActive : ""}`} onClick={() => setTab(CHECK_SS_TAB)}>
+          📷 Check SS
+        </button>
         {sheet.salaries.map((salary) => (
           <button key={salary.id} role="tab" aria-selected={tab === `salary-${salary.id}`} className={`${ui.tab} ${tab === `salary-${salary.id}` ? ui.tabActive : ""}`} onClick={() => setTab(`salary-${salary.id}`)}>
             💎 {salary.name}
@@ -513,6 +518,14 @@ export default function AttendanceDetailPage() {
 
       {tab === LOGS_TAB ? (
         <LogsView attendanceId={attendanceId} admins={sheet.admins ?? []} />
+      ) : tab === CHECK_SS_TAB ? (
+        <CheckSsView
+          attendanceId={attendanceId}
+          clanId={sheet.clan.id}
+          sheet={sheet}
+          readOnly={readOnly}
+          onTick={(memberId, entryIds) => tickCells(entryIds.map((entryId) => ({ entryId, memberId })), true)}
+        />
       ) : tab === INCOME_TAB ? (
         <IncomeView income={sheet.income} editor={readOnly ? undefined : incomeEditor} />
       ) : tab === SUMMARY_TAB ? (

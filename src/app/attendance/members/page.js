@@ -13,7 +13,13 @@ const EMPTY_INFO_FORM = {
   ign: "",
   real_ign: "",
   clan_id: "",
+  discord_user_id: "",
 };
+
+const DISCORD_FILTER_ALL = "all";
+const DISCORD_FILTER_NONE = "none";
+const DISCORD_FILTER_LINKED = "linked";
+const DISCORD_FILTER_MISSING = "not_in_server";
 
 const GEAR_PROOF_FIELDS = [
   { name: "stats_image", label: "Stats" },
@@ -50,6 +56,7 @@ function memberToForm(m, statFields) {
     ign: m.ign ?? "",
     real_ign: m.real_ign ?? "",
     clan_id: m.clan_id ?? "",
+    discord_user_id: m.discord_user_id ?? "",
     stats: Object.fromEntries(
       statFields.map((f) => [f.name, m.stats?.[f.name] ?? ""])
     ),
@@ -79,8 +86,14 @@ export default function MembersPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [clanFilter, setClanFilter] = useState(CLAN_FILTER_ALL);
+  const [discordFilter, setDiscordFilter] = useState(DISCORD_FILTER_ALL);
+  const [discordStatus, setDiscordStatus] = useState({});
+  const [discordChecking, setDiscordChecking] = useState(false);
 
   const filteredMembers = members.filter((m) => {
+    if (discordFilter === DISCORD_FILTER_NONE && m.discord_user_id) return false;
+    if (discordFilter === DISCORD_FILTER_LINKED && !m.discord_user_id) return false;
+    if (discordFilter === DISCORD_FILTER_MISSING && discordStatus[m.id] !== "not_in_server") return false;
     if (clanFilter === CLAN_FILTER_ALL) return true;
     if (clanFilter === CLAN_FILTER_NONE) return m.clan_id == null;
     return String(m.clan_id) === clanFilter;
@@ -218,8 +231,29 @@ export default function MembersPage() {
       });
       const data = await res.json();
       if (res.ok) {
+        const memberId = isEdit ? editingMember.id : data.id;
+        const nextDiscord = form.discord_user_id.trim();
+        const prevDiscord = isEdit ? editingMember.discord_user_id ?? "" : "";
+        let discordError = "";
+        if (nextDiscord !== prevDiscord) {
+          const discordRes = await fetch(`${API_BASE}/api/discord/members/${memberId}`, {
+            method: "PUT",
+            headers: getHeaders(),
+            body: JSON.stringify({ discord_user_id: nextDiscord || null }),
+          });
+          if (discordRes.ok) {
+            setDiscordStatus((s) => {
+              const { [memberId]: _removed, ...rest } = s;
+              return rest;
+            });
+          } else {
+            const discordData = await discordRes.json().catch(() => ({}));
+            discordError = discordData.message || "Failed to update Discord ID.";
+          }
+        }
         closeModal();
         await fetchMembers();
+        if (discordError) setError(`Member saved, but the Discord ID was not updated: ${discordError}`);
       } else {
         setFormError(data.message || "Failed to save member.");
       }
@@ -227,6 +261,31 @@ export default function MembersPage() {
       setFormError("Connection error. Please try again.");
     } finally {
       setFormLoading(false);
+    }
+  }
+
+  async function checkDiscord() {
+    setDiscordChecking(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/discord/members/check`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDiscordStatus(Object.fromEntries(data.results.map((r) => [r.member_id, r.status])));
+        if (data.truncated) setError("Only the first 300 linked members were checked.");
+        else if (data.results.some((r) => r.status === "error")) setError("Some members could not be checked (Discord error). Try again.");
+        await fetchMembers();
+      } else {
+        setError(data.message || "Failed to check Discord.");
+      }
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setDiscordChecking(false);
     }
   }
 
@@ -271,11 +330,31 @@ export default function MembersPage() {
         <div className={styles.cardHeader}>
           <h2 className={styles.sectionTitle}>All Members</h2>
           <div className={styles.filter}>
-            {clanFilter !== CLAN_FILTER_ALL && (
+            {(clanFilter !== CLAN_FILTER_ALL || discordFilter !== DISCORD_FILTER_ALL) && (
               <span className={styles.filterCount}>
                 Showing {filteredMembers.length} of {members.length}
               </span>
             )}
+            <button
+              type="button"
+              className={styles.btnGhost}
+              onClick={checkDiscord}
+              disabled={discordChecking}
+              title="Check that every linked Discord account is still in our server"
+            >
+              {discordChecking ? "Checking…" : "Check Discord"}
+            </button>
+            <select
+              className={styles.filterSelect}
+              value={discordFilter}
+              onChange={(e) => setDiscordFilter(e.target.value)}
+              aria-label="Filter by Discord status"
+            >
+              <option value={DISCORD_FILTER_ALL}>Any Discord</option>
+              <option value={DISCORD_FILTER_LINKED}>Discord linked</option>
+              <option value={DISCORD_FILTER_NONE}>No Discord ID</option>
+              <option value={DISCORD_FILTER_MISSING}>Not in server (after check)</option>
+            </select>
             <select
               className={styles.filterSelect}
               value={clanFilter}
@@ -304,6 +383,7 @@ export default function MembersPage() {
                   <th>IGN</th>
                   <th>Real IGN</th>
                   <th>Clan</th>
+                  <th>Discord</th>
                   <th>Gear Proof</th>
                   <th>Level</th>
                   <th>Class</th>
@@ -320,6 +400,18 @@ export default function MembersPage() {
                     </td>
                     <td>{m.real_ign || <span className={styles.muted}>—</span>}</td>
                     <td>{m.clan_name}</td>
+                    <td>
+                      {m.discord_user_id ? (
+                        <span title={m.discord_user_id}>
+                          {m.discord_username || m.discord_user_id}
+                          {discordStatus[m.id] === "not_in_server" && <span className={styles.badgeWarn}>not in server</span>}
+                          {discordStatus[m.id] === "in_server" && <span className={styles.badgeOk}>in server</span>}
+                          {discordStatus[m.id] === "error" && <span className={styles.badgeMuted}>check failed</span>}
+                        </span>
+                      ) : (
+                        <span className={styles.badgeMuted}>no Discord ID</span>
+                      )}
+                    </td>
                     <td>
                       {(() => {
                         const count = GEAR_PROOF_FIELDS.filter(({ name }) => m[name]).length;
@@ -434,6 +526,19 @@ export default function MembersPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className={`${styles.formField} ${styles.fullWidth}`}>
+                    <label className={styles.label}>Discord User ID</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="discord_user_id"
+                      className={styles.input}
+                      placeholder="17-20 digit Discord ID (must be in our server)"
+                      value={form.discord_user_id}
+                      onChange={(e) => setForm((f) => ({ ...f, discord_user_id: e.target.value.replace(/\D/g, "").slice(0, 20) }))}
+                    />
                   </div>
                 </div>
               </div>

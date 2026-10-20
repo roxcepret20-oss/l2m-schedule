@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./register.module.css";
+import DiscordVerify from "../components/DiscordVerify";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -42,7 +43,8 @@ export default function UserRegisterPage() {
   const [imagePreviews, setImagePreviews] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [discordVerification, setDiscordVerification] = useState(null);
+  const [verifyKey, setVerifyKey] = useState(0);
   const fetchClans = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/clans`);
@@ -97,12 +99,19 @@ export default function UserRegisterPage() {
       return;
     }
 
+    if (!discordVerification) {
+      setError("Verify your Discord account first.");
+      return;
+    }
+
     setLoading(true);
     const payload = new FormData();
     payload.append("ign", form.ign.trim());
     payload.append("real_ign", form.real_ign.trim());
     payload.append("clan_id", form.clan_id !== "" ? form.clan_id : "");
     payload.append("password", form.password);
+    payload.append("discord_id", discordVerification.discordId);
+    payload.append("verification_token", discordVerification.token);
     payload.append("stats", JSON.stringify(Object.fromEntries(
       statFields.map(({ name }) => [
         name,
@@ -126,6 +135,10 @@ export default function UserRegisterPage() {
         localStorage.setItem("user_real_ign", data.user.real_ign);
         router.push(`/users/${encodeURIComponent(data.user.real_ign)}`);
       } else {
+        if (res.status === 401) {
+          setDiscordVerification(null);
+          setVerifyKey((k) => k + 1);
+        }
         setError(data.message || "Failed to register.");
       }
     } catch {
@@ -187,6 +200,10 @@ export default function UserRegisterPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className={`${styles.formField} ${styles.fullWidth}`}>
+                <DiscordVerify key={verifyKey} mode="register" labelClassName={styles.label} onVerified={setDiscordVerification} />
               </div>
 
               <div className={styles.formField}>
@@ -268,7 +285,7 @@ export default function UserRegisterPage() {
           <button
             type="submit"
             className={styles.btn}
-            disabled={loading || !form.ign.trim() || !form.real_ign.trim() || !form.password}
+            disabled={loading || !discordVerification || !form.ign.trim() || !form.real_ign.trim() || !form.password}
           >
             {loading ? "Registering…" : "Register"}
           </button>

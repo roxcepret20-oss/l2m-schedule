@@ -20,6 +20,32 @@ export default function UsersSettingsPage() {
 
   const [deactivateId, setDeactivateId] = useState(null);
   const [deactivateLoading, setDeactivateLoading] = useState(false);
+  const [discordStatus, setDiscordStatus] = useState({});
+  const [discordChecking, setDiscordChecking] = useState(false);
+
+  async function checkDiscord() {
+    setDiscordChecking(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/discord/members/check`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDiscordStatus(Object.fromEntries(data.results.map((r) => [r.member_id, r.status])));
+        if (data.truncated) setError("Only the first 300 linked members were checked.");
+        else if (data.results.some((r) => r.status === "error")) setError("Some members could not be checked (Discord error). Try again.");
+      } else {
+        setError(data.message || "Failed to check Discord.");
+      }
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setDiscordChecking(false);
+    }
+  }
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -77,6 +103,12 @@ export default function UsersSettingsPage() {
 
       <div className={styles.card}>
         <h2 className={styles.sectionTitle}>All Users</h2>
+        <p className={styles.muted}>
+          Users whose Discord account is missing or not in our server are likely mules — deactivate them here.{" "}
+          <button type="button" className={styles.btnEdit} onClick={checkDiscord} disabled={discordChecking}>
+            {discordChecking ? "Checking…" : "Check Discord"}
+          </button>
+        </p>
         {error && <p className={styles.errorText}>{error}</p>}
         {loading ? (
           <p className={styles.muted}>Loading…</p>
@@ -89,6 +121,7 @@ export default function UsersSettingsPage() {
                 <th>Username (Real IGN)</th>
                 <th>Member IGN</th>
                 <th>Clan</th>
+                <th>Discord</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th>Actions</th>
@@ -100,6 +133,18 @@ export default function UsersSettingsPage() {
                   <td>{user.real_ign}</td>
                   <td>{user.member_ign}</td>
                   <td>{user.clan_name || "—"}</td>
+                  <td>
+                    {user.discord_user_id ? (
+                      <span title={user.discord_user_id}>
+                        {user.discord_username || user.discord_user_id}
+                        {discordStatus[user.member_id] === "not_in_server" && <strong style={{ color: "#dc2626" }}> · not in server</strong>}
+                        {discordStatus[user.member_id] === "in_server" && <span style={{ color: "#16a34a" }}> · in server</span>}
+                        {discordStatus[user.member_id] === "error" && <span className={styles.muted}> · check failed</span>}
+                      </span>
+                    ) : (
+                      <span className={styles.muted}>no Discord ID</span>
+                    )}
+                  </td>
                   <td>{user.status}</td>
                   <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</td>
                   <td>

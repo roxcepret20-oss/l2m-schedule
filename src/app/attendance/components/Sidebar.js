@@ -19,6 +19,7 @@ const SETTINGS_SUB_ITEMS = [
   { href: "/attendance/settings/gear_score_formula", label: "Gear Score Formula" },
   { href: "/attendance/settings/attendance", label: "Attendance Settings" },
   { href: "/attendance/settings/tax", label: "Tax Settings" },
+  { href: "/attendance/settings/discord_channels", label: "Discord Channels" },
   { href: "/attendance/settings/admins", label: "Admins" },
   { href: "/attendance/settings/users", label: "Users" },
 ];

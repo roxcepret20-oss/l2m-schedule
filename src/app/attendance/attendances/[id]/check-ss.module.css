@@ -1,0 +1,255 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbar select {
+  width: auto;
+  flex: 0 0 auto;
+  min-width: 170px;
+}
+
+.toolbar > input {
+  flex: 1;
+  width: auto;
+  min-width: 200px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main-bg);
+}
+
+.messageDone {
+  opacity: 0.6;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.when {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chipOk {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.chipWarn {
+  background: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+}
+
+.chipMuted {
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--muted);
+}
+
+.reply {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.thumbBtn {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  cursor: zoom-in;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.thumb {
+  max-width: 260px;
+  max-height: 180px;
+  object-fit: cover;
+}
+
+.file {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+
+.lightboxImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tickLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 760px) {
+  .tickLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preview {
+  min-width: 0;
+}
+
+.previewMeta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.previewImg {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.tickForm {
+  min-width: 0;
+}
+
+.entryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.entryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.entryRow:hover {
+  background: var(--main-bg);
+}
+
+.entryTicked {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.entryTime {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.entryPoints {
+  margin-left: auto;
+  color: var(--muted);
+  white-space: nowrap;
+}
