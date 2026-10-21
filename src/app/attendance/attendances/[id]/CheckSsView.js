@@ -33,6 +33,16 @@ function mergeById(existing, incoming) {
   return [...existing, ...incoming.filter((m) => !seen.has(m.id))];
 }
 
+// Today's day index (Mon = 0) in Jakarta time when today falls inside the attendance week, else "all".
+function defaultDay(weekStart) {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+  if (!weekStart) return "all";
+  const [y, m, d] = weekStart.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const diff = Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(y, m - 1, d)) / 86400000);
+  return diff >= 0 && diff <= 6 ? String(diff) : "all";
+}
+
 export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onTick }) {
   const [channels, setChannels] = useState(null);
   const [channelId, setChannelId] = useState("");
@@ -41,7 +51,7 @@ export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onT
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [day, setDay] = useState("all");
+  const [day, setDay] = useState(() => defaultDay(sheet?.week_start));
   const [imagesOnly, setImagesOnly] = useState(true);
   const [hideReviewed, setHideReviewed] = useState(false);
   const [search, setSearch] = useState("");
