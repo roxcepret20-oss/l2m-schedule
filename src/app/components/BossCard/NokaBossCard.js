@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./NokaBossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
-import { getBossPoints } from "../../../lib/bossPoints";
+import { getBossPoints, getAltServerBossPoints } from "../../../lib/bossPoints";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -62,17 +62,19 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   return CLAN_SECONDARY;
 }
 
-function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0) {
+function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0, altServer = false) {
   const cat = boss.category;
-  if (cat !== "ffa" && cat !== "red") return null;
 
   // Maluk never awards points.
   if (boss.name === "Maluk") return null;
 
+  if (altServer) return { points: getAltServerBossPoints(cat, spawnDate, tzOffset), label: cat };
+  if (cat !== "ffa" && cat !== "red") return null;
+
   return { points: getBossPoints(spawnDate, tzOffset), label: cat };
 }
 
-export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" }) {
+export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altServer = false }) {
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
   const [now, setNow] = useState(() => Date.now());
 
@@ -132,7 +134,7 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL" })
     return "url('/noka_theme/Sentinel_bar.png')";
   }
 
-  const pointsInfo = getPointsInfo(boss, ffaMode, spawnDateRef.current, tzOffset);
+  const pointsInfo = getPointsInfo(boss, ffaMode, spawnDateRef.current, tzOffset, altServer);
 
   return (
     <div 

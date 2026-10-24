@@ -139,7 +139,7 @@ function mergeAndSort(bosses, events, tzOffset = 0) {
   });
 }
 
-export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", theme = "simple" }) {
+export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", theme = "simple", altServer = false }) {
   const [now, setNow] = useState(() => Date.now());
 
   const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset));
@@ -201,8 +201,8 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
                 ? <NokaEventCard event={item} />
                 : <EventCard event={item} />
               : theme === "noka"
-                ? <NokaBossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} />
-                : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} />}
+                ? <NokaBossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} altServer={altServer} />
+                : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} altServer={altServer} />}
           </motion.div>
         ))}
       </AnimatePresence>
