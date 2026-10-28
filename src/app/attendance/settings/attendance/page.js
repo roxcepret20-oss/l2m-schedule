@@ -15,6 +15,7 @@ const TABS = [
   { id: "points", label: "Point schemas" },
   { id: "events", label: "Daily events" },
   { id: "grades", label: "Grade thresholds & scores" },
+  { id: "general", label: "General" },
 ];
 
 export default function AttendanceSettingsPage() {
@@ -41,6 +42,81 @@ export default function AttendanceSettingsPage() {
       {tab === "points" && <PointRulesTab />}
       {tab === "events" && <EventsTab />}
       {tab === "grades" && <GradesTab />}
+      {tab === "general" && <GeneralTab />}
+    </div>
+  );
+}
+
+/* ───────────── General ───────────── */
+
+function GeneralTab() {
+  const [value, setValue] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    apiFetch("/api/attendance-settings/copy-gap")
+      .then((data) => setValue(String(data.copy_gap_minutes)))
+      .catch((err) => setError(err.message));
+  }, []);
+
+  const minutes = Number(value);
+  const validationError = value !== null && (value === "" || !Number.isInteger(minutes) || minutes < 0 || minutes > 60) ? "Enter a whole number of minutes between 0 and 60" : "";
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    try {
+      const data = await apiFetch("/api/attendance-settings/copy-gap", { method: "PUT", body: { copy_gap_minutes: minutes } });
+      setValue(String(data.copy_gap_minutes));
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={ui.card}>
+      <h2 className={ui.sectionTitle} style={{ marginBottom: 6 }}>Copy ticks between same-time bosses</h2>
+      <p className={ui.muted} style={{ marginBottom: 16 }}>
+        In an attendance day, bosses are grouped when each one is within this many minutes of the previous one (chained: 22:00, 22:02, 22:03, 22:05 is one group with 3 minutes).
+        Bosses in a group get a copy button next to their attendance count.
+      </p>
+      {value === null ? (
+        error ? <div className={ui.banner}>{error}</div> : <p className={ui.muted}>Loading…</p>
+      ) : (
+        <form onSubmit={handleSave}>
+          <label className={ui.muted}>
+            Max gap between bosses{" "}
+            <input
+              type="number"
+              min="0"
+              max="60"
+              step="1"
+              className={`${ui.input} ${ui.inputSm}`}
+              style={{ width: 80 }}
+              value={value}
+              onChange={(e) => {
+                setSaved(false);
+                setValue(e.target.value);
+              }}
+            />{" "}
+            minutes
+          </label>
+          {(validationError || error) && <p className={ui.errorText}>{validationError || error}</p>}
+          <div className={ui.actions} style={{ marginTop: 16 }}>
+            <button type="submit" className={ui.btnPrimary} disabled={saving || !!validationError}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            {saved && <span className={ui.muted}>Saved.</span>}
+          </div>
+        </form>
+      )}
     </div>
   );
 }

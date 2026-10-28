@@ -6,6 +6,7 @@ import styles from "./member-menu.module.css";
 
 // Everything a clan member can open. Add a feature here and it shows up in every page's menu.
 export const MEMBER_FEATURES = [
+  { label: "Schedule", href: "/" },
   { label: "Leaderboard", href: "/leaderboard" },
   { label: "Attendance", href: "/users/attendance" },
 ];

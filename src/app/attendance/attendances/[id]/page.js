@@ -15,6 +15,8 @@ import ParticipantsModal from "./ParticipantsModal";
 import IncomeView from "./IncomeView";
 import LogsView from "./LogsView";
 import CheckSsView from "./CheckSsView";
+import CopyTicksSheet from "./CopyTicksSheet";
+import { buildCopyGroups, DEFAULT_COPY_GAP_MINUTES } from "@/lib/copyGroups";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
@@ -84,6 +86,14 @@ export default function AttendanceDetailPage() {
   const [taxes, setTaxes] = useState([]);
   useEffect(() => {
     apiFetch("/api/loan-taxes").then((list) => setTaxes([...list].sort((a, b) => a.id - b.id))).catch(() => {});
+  }, []);
+
+  // Max minutes between chained bosses for the "copy to same-time bosses" button (Settings → Attendance).
+  const [copyGap, setCopyGap] = useState(DEFAULT_COPY_GAP_MINUTES);
+  useEffect(() => {
+    apiFetch("/api/attendance-settings/copy-gap")
+      .then((data) => Number.isInteger(data?.copy_gap_minutes) && setCopyGap(data.copy_gap_minutes))
+      .catch(() => {});
   }, []);
 
   const readOnly = sheet?.status === "inactive";
@@ -304,6 +314,8 @@ export default function AttendanceDetailPage() {
     () => (sheet && typeof tab === "number" && tab < SUMMARY_TAB ? [...sheet.days[tab].entries].sort(byBossThenEvent) : []),
     [sheet, tab]
   );
+
+  const copyGroups = useMemo(() => buildCopyGroups(dayEntries, copyGap), [dayEntries, copyGap]);
 
   const visibleMembers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -600,7 +612,20 @@ export default function AttendanceDetailPage() {
                           </button>
                         )}
                         <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
-                        <div className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</div>
+                        <div className={styles.colCountRow}>
+                          <span className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</span>
+                          {!readOnly && copyGroups.has(entry.id) && (
+                            <button
+                              type="button"
+                              className={styles.copyGroupBtn}
+                              title="Copy these ticks to bosses at the same time"
+                              aria-label={`Copy ticks of ${entry.name} to bosses at the same time`}
+                              onClick={() => setModal({ type: "copyGroup", entryId: entry.id })}
+                            >
+                              ⧉ {copyGroups.get(entry.id).length - 1}
+                            </button>
+                          )}
+                        </div>
                         {!readOnly && (
                           <div className={styles.colButtons}>
                             <button className={styles.iconBtn} title="Import participants from screenshots" aria-label={`Import participants for ${entry.name}`} onClick={() => setModal({ type: "participants", entryId: entry.id })}>📷</button>
@@ -665,7 +690,7 @@ export default function AttendanceDetailPage() {
           )}
 
           <p className={ui.hint}>
-            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick all bosses in the row for this day (events are not included) · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · ★ = event · arrow keys + Space also work.
+            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick all bosses in the row for this day (events are not included) · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · the <b>⧉ N</b> button beside the count copies the column&apos;s ticks to the other N bosses at the same time (a bottom sheet lets you uncheck bosses first) · ★ = event · arrow keys + Space also work.
           </p>
         </>
       )}
@@ -716,6 +741,23 @@ export default function AttendanceDetailPage() {
             onClose={() => setModal(null)}
             onSubmit={async (memberIds) => {
               tickCells(memberIds.map((memberId) => ({ entryId: entry.id, memberId })), true);
+              setModal(null);
+            }}
+          />
+        );
+      })()}
+      {modal?.type === "copyGroup" && (() => {
+        const source = dayEntries.find((e) => e.id === modal.entryId);
+        const group = copyGroups.get(modal.entryId);
+        if (!source || !group) return null;
+        return (
+          <CopyTicksSheet
+            source={source}
+            targets={group.filter((e) => e.id !== source.id)}
+            gapMinutes={copyGap}
+            onClose={() => setModal(null)}
+            onConfirm={(targets) => {
+              tickCells(targets.flatMap((t) => source.member_ids.map((memberId) => ({ entryId: t.id, memberId }))), true);
               setModal(null);
             }}
           />

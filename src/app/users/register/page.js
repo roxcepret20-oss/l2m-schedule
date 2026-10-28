@@ -297,6 +297,11 @@ export default function UserRegisterPage() {
             Sign in
           </Link>
         </p>
+        <p className={styles.footerText}>
+          <Link href="/" className={styles.footerLink}>
+            ← Back to schedule
+          </Link>
+        </p>
       </div>
     </div>
   );

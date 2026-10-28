@@ -538,6 +538,27 @@
   max-width: 600px;
 }
 
+.modalOverlaySheet {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.modalSheet {
+  max-width: 560px;
+  max-height: 85vh;
+  border-radius: 16px 16px 0 0;
+  animation: sheetUp 0.2s ease-out;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .modalHeader {
   display: flex;
   align-items: center;

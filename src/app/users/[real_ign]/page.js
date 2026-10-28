@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import styles from "./dashboard.module.css";
 import MemberMenu from "../MemberMenu";
 
@@ -174,6 +175,7 @@ export default function UserDashboardPage() {
           <p className={styles.subtitle}>Manage your own stats and gear proof</p>
         </div>
         <div className={styles.headerActions}>
+          <Link href="/" className={styles.btnGhost}>← Schedule</Link>
           <MemberMenu />
           <button className={styles.btnGhost} onClick={handleLogout}>
             Logout
