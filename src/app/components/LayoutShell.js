@@ -11,7 +11,7 @@ const BARE_ROUTES = ["/attendance", "/users", "/leaderboard"];
 export default function LayoutShell({ children }) {
   const pathname = usePathname() || "/";
   const isBare = BARE_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
-  const PageNavbar = pathname === "/alt-server" ? AltServerNavbar : Navbar;
+  const PageNavbar = pathname === "/alt-server" || pathname.startsWith("/alt-server/") ? AltServerNavbar : Navbar;
 
   if (isBare) return <>{children}</>;
 

@@ -11,9 +11,9 @@ const FIVE_MIN_MS = 5 * 60 * 1000;
 const ONE_MIN_MS = 60 * 1000;
 const LATE_TOLERANCE_MS = 10 * 1000; // matches BossCard/EventCard's alert windows
 
-export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", view = "all" }) {
+export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", view = "all", altServer = false }) {
   const [now, setNow] = useState(() => Date.now());
-  const [items, setItems] = useState(() => filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode), view));
+  const [items, setItems] = useState(() => filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode, altServer), view));
 
   // per-item and per-chain "already announced" trackers, keyed by item.id /
   // group.id. Each entry also remembers the spawnDate/start it was recorded
@@ -26,8 +26,8 @@ export default function PipelineContainer({ bosses = [], events = [], tzOffset =
   // rebuild the full timeline whenever the source data, timezone, ffaMode, or
   // view filter changes
   useEffect(() => {
-    setItems(filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode), view));
-  }, [bosses, events, tzOffset, ffaMode, view]);
+    setItems(filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode, altServer), view));
+  }, [bosses, events, tzOffset, ffaMode, view, altServer]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);

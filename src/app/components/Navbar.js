@@ -6,18 +6,19 @@ import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import VolumeSlider from "./VolumeSlider";
 
-export default function Navbar() {
+const DEFAULT_NAV_OPTIONS = [
+  { value: "card", label: "Card", href: "/" },
+  { value: "pipeline", label: "Pipeline", href: "/pipeline" },
+];
+
+export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_NAV_OPTIONS, showProfile = true }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
-  const navOptions = [
-    { value: "card", label: "Card", href: "/" },
-    { value: "pipeline", label: "Pipeline", href: "/pipeline" },
-  ];
-
-  const selectedValue = pathname === "/pipeline" ? "pipeline" : "card";
+  const pipelineOption = navOptions.find((option) => option.value === "pipeline");
+  const selectedValue = pipelineOption && pathname === pipelineOption.href ? "pipeline" : "card";
   const selectedOption = navOptions.find((option) => option.value === selectedValue) || navOptions[0];
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="logo">Shatter Company</div>
+      <div className="logo">{logo}</div>
       <div className="nav-items">
         <div className="nav-dropdown" ref={menuRef}>
           <button
@@ -78,7 +79,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
-       <Link href="/users" className="nav-profile-link">My Profile</Link>
+       {showProfile && <Link href="/users" className="nav-profile-link">My Profile</Link>}
        <VolumeSlider />
        <ThemeToggle />
     </nav>

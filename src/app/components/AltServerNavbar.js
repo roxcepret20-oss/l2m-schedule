@@ -1,13 +1,12 @@
 "use client";
 
-import ThemeToggle from "./ThemeToggle";
-import VolumeSlider from "./VolumeSlider";
+import Navbar from "./Navbar";
+
+const ALT_NAV_OPTIONS = [
+  { value: "card", label: "Card", href: "/alt-server" },
+  { value: "pipeline", label: "Pipeline", href: "/alt-server/pipeline" },
+];
 
 export default function AltServerNavbar() {
-  return (
-    <nav className="navbar">
-      <div className="logo">Alt Schedule</div>
-      <ThemeToggle />
-    </nav>
-  );
+  return <Navbar logo="Alt Schedule" navOptions={ALT_NAV_OPTIONS} showProfile={false} />;
 }

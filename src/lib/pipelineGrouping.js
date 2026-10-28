@@ -2,7 +2,7 @@
 // chronological timeline, then splits that timeline into "pipelines" (chains)
 // wherever the gap between two consecutive spawns exceeds GAP_MS.
 
-import { getBossPoints } from "./bossPoints";
+import { getBossPoints, getAltServerBossPoints } from "./bossPoints";
 
 export const PIPELINE_GAP_MS = 10 * 60 * 1000; // 10 minutes
 const EXPIRY_MS = 2 * 60 * 1000; // keep items visible until 2min after spawn
@@ -58,8 +58,10 @@ function tagForBoss(boss) {
 
 // Same rule as the boss list cards (see lib/bossPoints.js), so the pipeline shows the
 // exact same points a boss would award there.
-function getPipelineBossPoints(boss, spawnDate = null, tzOffset = 0) {
+// On /alt-server/pipeline every category awards points (getAltServerBossPoints).
+function getPipelineBossPoints(boss, spawnDate = null, tzOffset = 0, altServer = false) {
   const cat = boss.category;
+  if (altServer) return getAltServerBossPoints(cat, spawnDate, tzOffset);
   if (cat !== "ffa" && cat !== "red") return null;
   return getBossPoints(spawnDate, tzOffset);
 }
@@ -75,7 +77,7 @@ function normalizePoints(rawPoints) {
  * chronologically-sorted list of timeline items, each with a resolved
  * `spawnDate` (Date) usable for chaining/countdowns.
  */
-export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL") {
+export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", altServer = false) {
   const safeBosses = Array.isArray(bosses) ? bosses : [];
   const safeEvents = Array.isArray(events) ? events : [];
   const now = Date.now();
@@ -95,7 +97,7 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMo
         category: b.category,
         type: b.type,
         tag: tagForBoss(b),
-        points: normalizePoints(getPipelineBossPoints(b, spawnDate, tzOffset)),
+        points: normalizePoints(getPipelineBossPoints(b, spawnDate, tzOffset, altServer)),
         spawnDate,
         raw: b,
       };
