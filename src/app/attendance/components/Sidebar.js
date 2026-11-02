@@ -13,6 +13,7 @@ const MENU_ITEMS = [
   { href: "/attendance/members", label: "Members", icon: "users" },
   { href: "/attendance/attendances", label: "Attendances", icon: "check", matchPrefix: true },
   { href: "/attendance/loans", label: "Loans", icon: "coin", matchPrefix: true },
+  { href: "/attendance/clan-savings", label: "Clan Savings", icon: "piggy", matchPrefix: true },
 ];
 
 const SETTINGS_SUB_ITEMS = [
@@ -54,6 +55,11 @@ const ICONS = {
   coin: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" /><path d="M14.5 9.5c-.6-.8-1.5-1.2-2.5-1.2-1.4 0-2.5.8-2.5 1.9 0 2.6 5 1.4 5 3.9 0 1.1-1.1 1.9-2.5 1.9-1.1 0-2-.5-2.6-1.3" /><path d="M12 6.5v1.8M12 15.7v1.8" />
+    </svg>
+  ),
+  piggy: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h16v13H4z" /><path d="M2 7l2-4h16l2 4" /><path d="M9 12h6" />
     </svg>
   ),
   collapse: (

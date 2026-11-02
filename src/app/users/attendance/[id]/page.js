@@ -165,6 +165,7 @@ export default function MemberAttendanceDetailPage() {
                     <div className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</div>
                   </th>
                 ))}
+                <th className={styles.dayPtsHead}>PVP</th>
                 <th className={styles.dayPtsHead}>Day pts</th>
               </tr>
             </thead>
@@ -172,6 +173,7 @@ export default function MemberAttendanceDetailPage() {
               {visibleMembers.map((member) => {
                 const stat = standingByMember.get(member.id);
                 const dayPts = dayEntries.reduce((sum, e) => sum + (e.member_ids.includes(member.id) ? e.points : 0), 0);
+                const dayPvp = sheet.days[tab].pvp?.[member.id] ?? 0;
                 return (
                   <tr key={member.id}>
                     <td className={local.memberCell}>
@@ -195,6 +197,9 @@ export default function MemberAttendanceDetailPage() {
                         </td>
                       );
                     })}
+                    <td className={`${styles.cell} ${styles.dayPts}`} style={{ cursor: "default" }}>
+                      <span className={dayPvp > 0 ? styles.pvpPos : styles.pvpNeg}>{dayPvp ? (dayPvp > 0 ? `+${dayPvp}` : dayPvp) : ""}</span>
+                    </td>
                     <td className={`${styles.cell} ${styles.dayPts}`} style={{ color: "var(--text)", cursor: "default" }}>{dayPts || ""}</td>
                   </tr>
                 );
@@ -248,7 +253,8 @@ function SummaryView({ sheet, onlyMe, myId }) {
     });
     const byPoints = (a, b) => b.points - a.points || b.totalScore - a.totalScore || a.ign.localeCompare(b.ign);
     const byTotal = (a, b) => b.totalScore - a.totalScore || b.points - a.points || a.ign.localeCompare(b.ign);
-    return list.sort(sortBy === "total" ? byTotal : byPoints);
+    const byPvp = (a, b) => b.pvp_points - a.pvp_points || b.points - a.points || a.ign.localeCompare(b.ign);
+    return list.sort(sortBy === "total" ? byTotal : sortBy === "pvp" ? byPvp : byPoints);
   }, [sheet, gearById, sortBy]);
 
   const rows = ranked.map((s, i) => ({ ...s, place: i + 1 })).filter((s) => !onlyMe || s.member_id === myId);
@@ -268,6 +274,7 @@ function SummaryView({ sheet, onlyMe, myId }) {
         Sort by
         <select className={ui.select} style={{ width: "auto" }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="points">Points</option>
+          <option value="pvp">PVP</option>
           <option value="total">Total Score</option>
         </select>
       </label>
@@ -279,6 +286,7 @@ function SummaryView({ sheet, onlyMe, myId }) {
               <th>#</th>
               <th>Member</th>
               {DAY_SHORT.map((d) => <th key={d}>{d}</th>)}
+              <th title="Week total of PVP points, already included in Points">PVP</th>
               <th>Points</th>
               <th>% of target</th>
               <th>Grade</th>
@@ -294,6 +302,7 @@ function SummaryView({ sheet, onlyMe, myId }) {
                 {perDay.get(s.member_id).map((v, d) => (
                   <td key={d} className={`${styles.summaryNum} ${v ? "" : styles.summaryZero}`}>{v || "–"}</td>
                 ))}
+                <td className={`${styles.summaryNum} ${s.pvp_points ? (s.pvp_points > 0 ? styles.pvpPos : styles.pvpNeg) : styles.summaryZero}`}>{s.pvp_points ? (s.pvp_points > 0 ? `+${s.pvp_points}` : s.pvp_points) : "–"}</td>
                 <td><b>{s.points}</b></td>
                 <td>{s.percent}%</td>
                 <td><span className={`${ui.grade} ${ui[`grade_${s.grade}`]}`}>{s.grade}</span></td>
@@ -305,10 +314,10 @@ function SummaryView({ sheet, onlyMe, myId }) {
         </table>
       </div>
       <p className={ui.hint}>
-        Grades: S ≥ {t.S}% · A ≥ {t.A}% · B ≥ {t.B}% · C ≥ {t.C}% · D ≥ {t.D}% · E below.
+        Grades: S ≥ {t.S}% · A ≥ {t.A}% · B ≥ {t.B}% · C ≥ {t.C}% · D ≥ {t.D}% · E below. Points = attendance points (day columns) + PVP, never below 0.
         {sheet.status === "done" ? " Saved when this attendance was settled." : " Updates live as the attendance is ticked."}
         <br />
-        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}). Sorted highest first by {sortBy === "total" ? "Total Score" : "Points"}.
+        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}). Sorted highest first by {sortBy === "total" ? "Total Score" : sortBy === "pvp" ? "PVP" : "Points"}.
       </p>
     </div>
   );

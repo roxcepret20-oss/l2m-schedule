@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/attendanceApi";
 import { DAY_NAMES } from "@/lib/weeks";
 import { Modal } from "../../components/Modal";
+import PvpModal from "./PvpModal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./check-ss.module.css";
 
@@ -43,7 +44,7 @@ function defaultDay(weekStart) {
   return diff >= 0 && diff <= 6 ? String(diff) : "all";
 }
 
-export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onTick }) {
+export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onTick, onPvp }) {
   const [channels, setChannels] = useState(null);
   const [channelId, setChannelId] = useState("");
   const [messages, setMessages] = useState([]);
@@ -57,6 +58,7 @@ export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onT
   const [search, setSearch] = useState("");
   const [lightbox, setLightbox] = useState(null);
   const [tickMessage, setTickMessage] = useState(null);
+  const [pvpMessage, setPvpMessage] = useState(null);
   const [linkMessage, setLinkMessage] = useState(null);
   const [reviewed, setReviewed] = useState(() => readReviewed(attendanceId));
 
@@ -262,6 +264,11 @@ export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onT
                         ✓ Tick
                       </button>
                     )}
+                    {!readOnly && (
+                      <button type="button" className={`${ui.btnGhost} ${ui.btnSm}`} onClick={() => setPvpMessage(m)}>
+                        ⚔ PVP Count
+                      </button>
+                    )}
                     {!m.member && !readOnly && (
                       <button type="button" className={`${ui.btnGhost} ${ui.btnSm}`} onClick={() => setLinkMessage(m)}>
                         Link member
@@ -302,6 +309,20 @@ export default function CheckSsView({ attendanceId, clanId, sheet, readOnly, onT
             onTick(memberId, entryIds);
             markReviewed(tickMessage.id);
             setTickMessage(null);
+          }}
+        />
+      )}
+
+      {pvpMessage && (
+        <PvpModal
+          sheet={sheet}
+          initialMemberId={pvpMessage.member && sheet.members.some((m) => m.id === pvpMessage.member.id) ? pvpMessage.member.id : ""}
+          initialDayIndex={pvpMessage.day_index ?? 0}
+          aside={<MessagePreview message={pvpMessage} />}
+          onClose={() => setPvpMessage(null)}
+          onSubmit={async (change) => {
+            await onPvp([change]);
+            setPvpMessage(null);
           }}
         />
       )}

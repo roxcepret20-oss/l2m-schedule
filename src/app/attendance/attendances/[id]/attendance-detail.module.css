@@ -408,6 +408,36 @@
   opacity: 0.5;
 }
 
+.pvpBtn {
+  width: 100%;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pvpBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.pvpPos {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.pvpNeg {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.pvpEmpty {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
 /* ── Bulk bosses modal ── */
 .bulkRow {
   display: grid;

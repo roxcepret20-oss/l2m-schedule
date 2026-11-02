@@ -21,13 +21,15 @@ export function gradeFor(points, fullScore, handicap, thresholds) {
   return "E";
 }
 
-// Points per member from the days/entries/ticks, plus rank, percent of the target and grade.
+// Points per member from the days/entries/ticks plus the signed PVP points of each day, then rank, percent of the target and grade.
+// PVP counts toward a member's points (never below 0) but does not change the full score / target.
 export function computeStandings(members, days, thresholds, handicap) {
   // A missing or invalid handicap falls back to 1 so the numbers never turn into NaN.
   const safeHandicap = Number(handicap) > 0 ? Number(handicap) : 1;
   const points = new Map(members.map((m) => [m.id, 0]));
+  const pvp = new Map(members.map((m) => [m.id, 0]));
   let fullScore = 0;
-  days.forEach((day) =>
+  days.forEach((day) => {
     day.entries.forEach((entry) => {
       const value = Number(entry.points) || 0;
       // Entries nobody was ticked on (boss/event did not happen) are left out of the full score.
@@ -35,11 +37,20 @@ export function computeStandings(members, days, thresholds, handicap) {
       entry.member_ids.forEach((memberId) => {
         if (points.has(memberId)) points.set(memberId, points.get(memberId) + value);
       });
-    })
-  );
+    });
+    Object.entries(day.pvp ?? {}).forEach(([memberId, value]) => {
+      if (pvp.has(Number(memberId))) pvp.set(Number(memberId), pvp.get(Number(memberId)) + (Number(value) || 0));
+    });
+  });
 
   const ranked = members
-    .map((m) => ({ member_id: m.id, ign: m.ign, points: points.get(m.id) }))
+    .map((m) => ({
+      member_id: m.id,
+      ign: m.ign,
+      points: Math.max(0, points.get(m.id) + pvp.get(m.id)),
+      attendance_points: points.get(m.id),
+      pvp_points: pvp.get(m.id),
+    }))
     .sort((a, b) => b.points - a.points || a.ign.localeCompare(b.ign));
 
   let rank = 0;

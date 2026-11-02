@@ -15,6 +15,7 @@ import ParticipantsModal from "./ParticipantsModal";
 import IncomeView from "./IncomeView";
 import LogsView from "./LogsView";
 import CheckSsView from "./CheckSsView";
+import PvpModal, { formatPvp } from "./PvpModal";
 import CopyTicksSheet from "./CopyTicksSheet";
 import { buildCopyGroups, DEFAULT_COPY_GAP_MINUTES } from "@/lib/copyGroups";
 import ui from "../../components/attendance-ui.module.css";
@@ -25,7 +26,7 @@ const LOGS_TAB = "logs";
 const INCOME_TAB = "income";
 const CHECK_SS_TAB = "check-ss";
 const OUTDATED_API_MESSAGE =
-  "The API server is running old code (it does not return handicap/salaries/income). Restart the API server, then refresh this page.";
+  "The API server is running old code (it does not return handicap/salaries/income/PVP). Restart the API server, then refresh this page.";
 
 const withIncomeTotals = (items) => ({
   items,
@@ -67,7 +68,7 @@ export default function AttendanceDetailPage() {
       setLoadError("");
       try {
         const data = await apiFetch(`/api/attendances/${attendanceId}`);
-        if (typeof data.handicap !== "number" || !Array.isArray(data.salaries) || !data.income) throw new Error(OUTDATED_API_MESSAGE);
+        if (typeof data.handicap !== "number" || !Array.isArray(data.salaries) || !data.income || !data.days.every((d) => d.pvp)) throw new Error(OUTDATED_API_MESSAGE);
         setSheet(data);
       } catch (err) {
         setLoadError(err.message);
@@ -337,6 +338,27 @@ export default function AttendanceDetailPage() {
 
   const copyPrevious = (index) => setEntryMembers(dayEntries[index].id, [...dayEntries[index - 1].member_ids]);
 
+  // Changes are { member_id, day_index, mode: "set" | "add", points }. Throws so the modal can show the error.
+  async function savePvp(changes) {
+    await queueRef.current;
+    const result = await apiFetch(`/api/attendances/${attendanceId}/pvp`, { method: "PUT", body: { changes } });
+    setSheet((prev) =>
+      prev && {
+        ...prev,
+        days: prev.days.map((day, d) => {
+          const updates = result.pvp.filter((p) => p.day_index === d);
+          if (updates.length === 0) return day;
+          const pvp = { ...day.pvp };
+          updates.forEach(({ member_id, points }) => {
+            if (points === 0) delete pvp[member_id];
+            else pvp[member_id] = points;
+          });
+          return { ...day, pvp };
+        }),
+      }
+    );
+  }
+
   const addEntries = (entries) =>
     setSheet((prev) =>
       prev && {
@@ -537,6 +559,7 @@ export default function AttendanceDetailPage() {
           sheet={sheet}
           readOnly={readOnly}
           onTick={(memberId, entryIds) => tickCells(entryIds.map((entryId) => ({ entryId, memberId })), true)}
+          onPvp={savePvp}
         />
       ) : tab === INCOME_TAB ? (
         <IncomeView income={sheet.income} editor={readOnly ? undefined : incomeEditor} />
@@ -637,6 +660,7 @@ export default function AttendanceDetailPage() {
                         )}
                       </th>
                     ))}
+                    <th className={styles.dayPtsHead} title="PVP points (kills + assists) of this day">PVP</th>
                     <th className={styles.dayPtsHead}>Day pts</th>
                   </tr>
                 </thead>
@@ -644,6 +668,7 @@ export default function AttendanceDetailPage() {
                   {visibleMembers.map((member, r) => {
                     const stat = standingByMember.get(member.id);
                     const dayPts = dayEntries.reduce((sum, e) => sum + (e.member_ids.includes(member.id) ? e.points : 0), 0);
+                    const dayPvp = sheet.days[tab].pvp[member.id] ?? 0;
                     return (
                       <tr key={member.id}>
                         <td className={styles.memberCell}>
@@ -680,6 +705,21 @@ export default function AttendanceDetailPage() {
                             </td>
                           );
                         })}
+                        <td className={`${styles.cell} ${styles.dayPts}`} style={{ cursor: "default" }}>
+                          {readOnly ? (
+                            <span className={dayPvp > 0 ? styles.pvpPos : styles.pvpNeg}>{dayPvp ? formatPvp(dayPvp) : ""}</span>
+                          ) : (
+                            <button
+                              type="button"
+                              className={`${styles.pvpBtn} ${dayPvp > 0 ? styles.pvpPos : dayPvp < 0 ? styles.pvpNeg : styles.pvpEmpty}`}
+                              title={`Add, deduct or set PVP points of ${member.ign} for ${DAY_NAMES[tab]}`}
+                              aria-label={`PVP points of ${member.ign} on ${DAY_NAMES[tab]}`}
+                              onClick={() => setModal({ type: "pvp", memberId: member.id })}
+                            >
+                              {dayPvp ? formatPvp(dayPvp) : "+"}
+                            </button>
+                          )}
+                        </td>
                         <td className={`${styles.cell} ${styles.dayPts}`} style={{ color: "var(--text)", cursor: "default" }}>{dayPts || ""}</td>
                       </tr>
                     );
@@ -727,6 +767,18 @@ export default function AttendanceDetailPage() {
           busy={busy}
           onConfirm={() => deleteSalary(modal.salary)}
           onClose={() => setModal(null)}
+        />
+      )}
+      {modal?.type === "pvp" && (
+        <PvpModal
+          sheet={sheet}
+          initialMemberId={modal.memberId}
+          initialDayIndex={tab}
+          onClose={() => setModal(null)}
+          onSubmit={async (change) => {
+            await savePvp([change]);
+            setModal(null);
+          }}
         />
       )}
       {modal?.type === "participants" && (() => {
@@ -859,7 +911,8 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
     });
     const byPoints = (a, b) => b.points - a.points || b.totalScore - a.totalScore || a.ign.localeCompare(b.ign);
     const byTotal = (a, b) => b.totalScore - a.totalScore || b.points - a.points || a.ign.localeCompare(b.ign);
-    return list.sort(sortBy === "total" ? byTotal : byPoints);
+    const byPvp = (a, b) => b.pvp_points - a.pvp_points || b.points - a.points || a.ign.localeCompare(b.ign);
+    return list.sort(sortBy === "total" ? byTotal : sortBy === "pvp" ? byPvp : byPoints);
   }, [standings, gearById, sheet.grade_scores, sortBy]);
 
   const t = sheet.thresholds;
@@ -882,6 +935,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
         Sort by
         <select className={ui.select} style={{ width: "auto" }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="points">Points</option>
+          <option value="pvp">PVP</option>
           <option value="total">Total Score</option>
         </select>
       </label>
@@ -893,6 +947,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
               <th>#</th>
               <th>Member</th>
               {DAY_SHORT.map((d) => <th key={d}>{d}</th>)}
+              <th title="Week total of PVP points (kills + assists), already included in Points">PVP</th>
               <th>Points</th>
               <th>% of target</th>
               <th>Grade</th>
@@ -908,6 +963,7 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
                 {perDay.get(s.member_id).map((v, d) => (
                   <td key={d} className={`${styles.summaryNum} ${v ? "" : styles.summaryZero}`}>{v || "–"}</td>
                 ))}
+                <td className={`${styles.summaryNum} ${s.pvp_points ? (s.pvp_points > 0 ? styles.pvpPos : styles.pvpNeg) : styles.summaryZero}`}>{s.pvp_points ? formatPvp(s.pvp_points) : "–"}</td>
                 <td><b>{s.points}</b></td>
                 <td>{s.percent}%</td>
                 <td><span className={`${ui.grade} ${ui[`grade_${s.grade}`]}`}>{s.grade}</span></td>
@@ -919,10 +975,10 @@ function SummaryView({ sheet, standings, fullScore, targetScore, onEditHandicap 
         </table>
       </div>
       <p className={ui.hint}>
-        % of target = points ÷ (full attendance score ÷ handicap), not capped. S ≥ {t.S}% · A ≥ {t.A}% · B ≥ {t.B}% · C ≥ {t.C}% · D ≥ {t.D}% · E below.
+        % of target = points ÷ (full attendance score ÷ handicap), not capped. Points = attendance points (day columns) + PVP, never below 0. S ≥ {t.S}% · A ≥ {t.A}% · B ≥ {t.B}% · C ≥ {t.C}% · D ≥ {t.D}% · E below.
         {sheet.status === "done" ? " Saved when this attendance was settled." : " Updates live as you tick."}
         <br />
-        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}). Sorted highest first by {sortBy === "total" ? "Total Score" : "Points"}.
+        Total Score = Gear Score + grade value (S {sc.S} · A {sc.A} · B {sc.B} · C {sc.C} · D {sc.D} · E {sc.E}). Sorted highest first by {sortBy === "total" ? "Total Score" : sortBy === "pvp" ? "PVP" : "Points"}.
       </p>
     </div>
   );
