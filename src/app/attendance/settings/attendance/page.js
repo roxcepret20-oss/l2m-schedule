@@ -292,7 +292,7 @@ function BossesTab({ qs, clanId }) {
     setAdding(true);
     setError("");
     try {
-      await apiFetch("/api/attendance-settings/bosses", {
+      await apiFetch(`/api/attendance-settings/bosses${qs}`, {
         method: "POST",
         body: { name: addName.trim(), default_points: Number(addPoints), point_rules: addCustom ? toPayloadRules(addRules) : null },
       });
@@ -339,7 +339,7 @@ function BossesTab({ qs, clanId }) {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await apiFetch(`/api/attendance-settings/bosses/${deleteTarget.id}`, { method: "DELETE" });
+      await apiFetch(`/api/attendance-settings/bosses/${deleteTarget.id}${qs}`, { method: "DELETE" });
       setDeleteTarget(null);
       await load();
     } catch (err) {
@@ -360,14 +360,18 @@ function BossesTab({ qs, clanId }) {
         When a boss is added to an attendance (manually or by the Discord bot), its points come from the matching time window in the
         <b> Point schemas</b> tab. A boss can have its own schema instead; the default points are used when no window matches.
         Points can still be overridden per spawn. Changing rules never affects past attendances.
-        {clanId && " For a clan you can enable or disable bosses and set their points and schema; add or rename bosses in the Default settings. A disabled boss gives no points and is ignored when the Discord bot reports it."}
+        {clanId && " For a clan you choose which bosses give points: enable or disable the bosses of the Default list, set their points and schema, or add a boss only this clan uses (its name must exist in the Discord bot's boss list to be reported). Bosses added to Default later start disabled here. A boss that is not enabled gives no points and is ignored when the Discord bot reports it."}
       </p>
 
-      {!clanId && (
       <form onSubmit={handleAdd} className={ui.inlineForm} style={{ marginBottom: 16 }}>
         <div className={ui.field} style={{ flex: 1, minWidth: 180 }}>
-          <label className={ui.label} htmlFor="boss-add-name">Boss name</label>
-          <input id="boss-add-name" className={ui.input} value={addName} onChange={(e) => setAddName(e.target.value)} maxLength={100} placeholder="Boss name" required />
+          <label className={ui.label} htmlFor="boss-add-name">{clanId ? "Boss name (pick a disabled one to enable it, or type a new name)" : "Boss name"}</label>
+          <input id="boss-add-name" className={ui.input} value={addName} onChange={(e) => setAddName(e.target.value)} maxLength={100} placeholder="Boss name" list={clanId ? "boss-add-options" : undefined} required />
+          {clanId && (
+            <datalist id="boss-add-options">
+              {bosses.filter((b) => b.enabled === false).map((b) => <option key={b.id} value={b.name} />)}
+            </datalist>
+          )}
         </div>
         <div className={ui.field}>
           <label className={ui.label} htmlFor="boss-add-points">Default points</label>
@@ -383,7 +387,6 @@ function BossesTab({ qs, clanId }) {
           {addCustom && <div style={{ marginTop: 10 }}><PointRulesEditor rules={addRules} onChange={setAddRules} idPrefix="boss-add" /></div>}
         </div>
       </form>
-      )}
 
       {error && <div className={ui.banner}>{error}</div>}
 
@@ -430,6 +433,7 @@ function BossesTab({ qs, clanId }) {
                     <td>
                       {boss.name}
                       {boss.enabled === false && <span className={`${ui.badge} ${ui.status_inactive}`} style={{ marginLeft: 8 }}>disabled</span>}
+                      {boss.clan_only && <span className={`${ui.badge} ${ui.status_created}`} style={{ marginLeft: 8 }}>clan only</span>}
                     </td>
                     <td>{boss.default_points}</td>
                     <td className={ui.mutedCell}>
@@ -439,7 +443,7 @@ function BossesTab({ qs, clanId }) {
                     <td>
                       <div className={ui.actions}>
                         <button className={ui.btnEdit} onClick={() => startEdit(boss)}>Edit</button>
-                        {!clanId && <button className={ui.btnDelete} onClick={() => setDeleteTarget(boss)}>Delete</button>}
+                        {(!clanId || boss.clan_only) && <button className={ui.btnDelete} onClick={() => setDeleteTarget(boss)}>{clanId ? "Remove" : "Delete"}</button>}
                       </div>
                     </td>
                   </tr>
@@ -452,9 +456,9 @@ function BossesTab({ qs, clanId }) {
 
       {deleteTarget && (
         <ConfirmModal
-          title="Delete boss?"
-          message={`"${deleteTarget.name}" will be removed from the list. Attendances that already used it keep their entries.`}
-          confirmLabel="Delete"
+          title={clanId ? "Remove boss from this clan?" : "Delete boss?"}
+          message={clanId ? `"${deleteTarget.name}" will no longer be tracked for this clan. Attendances that already used it keep their entries.` : `"${deleteTarget.name}" will be removed from the list. Attendances that already used it keep their entries.`}
+          confirmLabel={clanId ? "Remove" : "Delete"}
           danger
           busy={deleting}
           onConfirm={handleDelete}
