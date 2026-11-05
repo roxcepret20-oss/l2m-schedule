@@ -89,13 +89,15 @@ export default function AttendanceDetailPage() {
     apiFetch("/api/loan-taxes").then((list) => setTaxes([...list].sort((a, b) => a.id - b.id))).catch(() => {});
   }, []);
 
-  // Max minutes between chained bosses for the "copy to same-time bosses" button (Settings → Attendance).
+  // Max minutes between chained bosses for the "copy to same-time bosses" button (Settings → Attendance, per clan).
   const [copyGap, setCopyGap] = useState(DEFAULT_COPY_GAP_MINUTES);
+  const sheetClanId = sheet?.clan?.id;
   useEffect(() => {
-    apiFetch("/api/attendance-settings/copy-gap")
+    if (!sheetClanId) return;
+    apiFetch(`/api/attendance-settings/copy-gap?clan_id=${sheetClanId}`)
       .then((data) => Number.isInteger(data?.copy_gap_minutes) && setCopyGap(data.copy_gap_minutes))
       .catch(() => {});
-  }, []);
+  }, [sheetClanId]);
 
   const readOnly = sheet?.status === "inactive";
 
@@ -817,6 +819,7 @@ export default function AttendanceDetailPage() {
       })()}
       {modal?.type === "bulk" && (
         <BulkBossModal
+          clanId={sheet.clan?.id}
           dayLabel={DAY_NAMES[tab]}
           dayIndex={tab}
           onClose={() => setModal(null)}
@@ -1229,7 +1232,7 @@ function EntryModal({ title, initial, withName, submitLabel, note, onClose, onSu
   );
 }
 
-function BulkBossModal({ dayLabel, dayIndex, onClose, onSubmit }) {
+function BulkBossModal({ clanId, dayLabel, dayIndex, onClose, onSubmit }) {
   const [bosses, setBosses] = useState(null);
   const [globalRules, setGlobalRules] = useState([]);
   const [loadError, setLoadError] = useState("");
@@ -1239,14 +1242,16 @@ function BulkBossModal({ dayLabel, dayIndex, onClose, onSubmit }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetch("/api/attendance-settings/bosses")
+    // The clan's own boss list and point scheme (disabled bosses are left out by the API).
+    const qs = clanId ? `?clan_id=${clanId}` : "";
+    apiFetch(`/api/attendance-settings/bosses${qs}`)
       .then(setBosses)
       .catch((err) => setLoadError(err.message));
     // Without the global rules the points fall back to each boss's default points.
-    apiFetch("/api/attendance-settings/point-rules")
+    apiFetch(`/api/attendance-settings/point-rules${qs}`)
       .then(setGlobalRules)
       .catch(() => {});
-  }, []);
+  }, [clanId]);
 
   // points === null means "not edited by hand": it follows the time through the point rules.
   const rowFor = (boss) => rows[boss.id] ?? { checked: false, time: "20:00", points: null, server: "ours" };

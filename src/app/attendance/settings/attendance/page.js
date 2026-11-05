@@ -9,17 +9,101 @@ import { ConfirmModal } from "../../components/Modal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-settings.module.css";
 import PointRulesEditor from "./PointRulesEditor";
+import { ClanScopeSelect, CopyFromModal, SECTION_LABELS, SectionBanner } from "./ClanScope";
 
 const TABS = [
-  { id: "bosses", label: "Bosses" },
-  { id: "points", label: "Point schemas" },
-  { id: "events", label: "Daily events" },
-  { id: "grades", label: "Grade thresholds & scores" },
-  { id: "general", label: "General" },
+  { id: "bosses", label: "Bosses", section: "bosses" },
+  { id: "points", label: "Point schemas", section: "point_rules" },
+  { id: "events", label: "Daily events", section: "events" },
+  { id: "grades", label: "Grade thresholds & scores", section: "grades" },
+  { id: "general", label: "General", section: "general" },
 ];
+
+const CLAN_STORAGE_KEY = "attendance_settings_clan";
 
 export default function AttendanceSettingsPage() {
   const [tab, setTab] = useState("bosses");
+  const [clans, setClans] = useState([]);
+  const [status, setStatus] = useState({});
+  const [clanId, setClanId] = useState(null);
+  const [version, setVersion] = useState(0);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [scopeError, setScopeError] = useState("");
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const list = await apiFetch("/api/attendance-settings/clans-status");
+      setClans(list.map((c) => ({ id: c.clan_id, name: c.name })));
+      setStatus(Object.fromEntries(list.map((c) => [c.clan_id, c.sections])));
+      return list;
+    } catch {
+      // Older API without per-clan settings: only the Default settings are shown.
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus().then((list) => {
+      const saved = Number(localStorage.getItem(CLAN_STORAGE_KEY));
+      if (saved && list.some((c) => c.clan_id === saved)) setClanId(saved);
+    });
+  }, [loadStatus]);
+
+  function pickClan(id) {
+    setClanId(id);
+    setScopeError("");
+    if (id) localStorage.setItem(CLAN_STORAGE_KEY, String(id));
+    else localStorage.removeItem(CLAN_STORAGE_KEY);
+  }
+
+  const activeTab = TABS.find((t) => t.id === tab);
+  const section = activeTab.section;
+  const clan = clans.find((c) => c.id === clanId) ?? null;
+  const isCustom = (sectionId) => !!(clanId && status[clanId]?.[sectionId]);
+  const custom = clanId ? isCustom(section) : true;
+  const readOnly = !!clanId && !custom;
+  const qs = clanId ? `?clan_id=${clanId}` : "";
+  const scopeKey = `${clanId ?? "default"}-${custom}-${version}`;
+
+  async function refreshScope() {
+    await loadStatus();
+    setVersion((v) => v + 1);
+  }
+
+  async function copySections(body) {
+    await apiFetch(`/api/attendance-settings/clans/${clanId}/copy`, { method: "POST", body });
+    setCopyOpen(false);
+    await refreshScope();
+  }
+
+  async function customize() {
+    setBusy(true);
+    setScopeError("");
+    try {
+      await copySections({ sections: [section] });
+    } catch (err) {
+      setScopeError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetToDefault() {
+    setBusy(true);
+    setScopeError("");
+    try {
+      await apiFetch(`/api/attendance-settings/clans/${clanId}/sections/${section}`, { method: "DELETE" });
+      setResetOpen(false);
+      await refreshScope();
+    } catch (err) {
+      setScopeError(err.message);
+      setResetOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className={ui.page}>
@@ -30,36 +114,69 @@ export default function AttendanceSettingsPage() {
         </div>
       </div>
 
+      {clans.length > 0 && <ClanScopeSelect clans={clans} clanId={clanId} onChange={pickClan} />}
+
       <div className={ui.tabs} role="tablist">
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={`${ui.tab} ${tab === t.id ? ui.tabActive : ""}`} onClick={() => setTab(t.id)}>
             {t.label}
+            {isCustom(t.section) && <span title={`${clan?.name} has its own ${t.label}`}> ●</span>}
           </button>
         ))}
       </div>
 
-      {tab === "bosses" && <BossesTab />}
-      {tab === "points" && <PointRulesTab />}
-      {tab === "events" && <EventsTab />}
-      {tab === "grades" && <GradesTab />}
-      {tab === "general" && <GeneralTab />}
+      {clan && (
+        <SectionBanner
+          clanName={clan.name}
+          section={section}
+          custom={custom}
+          busy={busy}
+          onCustomize={customize}
+          onCopy={() => setCopyOpen(true)}
+          onReset={() => setResetOpen(true)}
+        />
+      )}
+      {scopeError && <div className={ui.banner}>{scopeError}</div>}
+
+      <fieldset disabled={readOnly} style={{ border: 0, margin: 0, padding: 0, minWidth: 0, opacity: readOnly ? 0.75 : 1 }}>
+        {tab === "bosses" && <BossesTab key={scopeKey} qs={qs} clanId={clanId} />}
+        {tab === "points" && <PointRulesTab key={scopeKey} qs={qs} />}
+        {tab === "events" && <EventsTab key={scopeKey} qs={qs} />}
+        {tab === "grades" && <GradesTab key={scopeKey} qs={qs} />}
+        {tab === "general" && <GeneralTab key={scopeKey} qs={qs} />}
+      </fieldset>
+
+      {copyOpen && clan && (
+        <CopyFromModal clan={clan} clans={clans} initialSection={section} onClose={() => setCopyOpen(false)} onSubmit={copySections} />
+      )}
+      {resetOpen && clan && (
+        <ConfirmModal
+          title="Reset to Default?"
+          message={`${clan.name}'s own ${SECTION_LABELS[section]} will be deleted and this clan goes back to following the Default. Existing attendances keep their entries; settled ones keep their grades.`}
+          confirmLabel="Reset to Default"
+          danger
+          busy={busy}
+          onConfirm={resetToDefault}
+          onClose={() => setResetOpen(false)}
+        />
+      )}
     </div>
   );
 }
 
 /* ───────────── General ───────────── */
 
-function GeneralTab() {
+function GeneralTab({ qs }) {
   const [value, setValue] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    apiFetch("/api/attendance-settings/copy-gap")
+    apiFetch(`/api/attendance-settings/copy-gap${qs}`)
       .then((data) => setValue(String(data.copy_gap_minutes)))
       .catch((err) => setError(err.message));
-  }, []);
+  }, [qs]);
 
   const minutes = Number(value);
   const validationError = value !== null && (value === "" || !Number.isInteger(minutes) || minutes < 0 || minutes > 60) ? "Enter a whole number of minutes between 0 and 60" : "";
@@ -70,7 +187,7 @@ function GeneralTab() {
     setError("");
     setSaved(false);
     try {
-      const data = await apiFetch("/api/attendance-settings/copy-gap", { method: "PUT", body: { copy_gap_minutes: minutes } });
+      const data = await apiFetch(`/api/attendance-settings/copy-gap${qs}`, { method: "PUT", body: { copy_gap_minutes: minutes } });
       setValue(String(data.copy_gap_minutes));
       setSaved(true);
     } catch (err) {
@@ -123,7 +240,7 @@ function GeneralTab() {
 
 /* ───────────── Bosses ───────────── */
 
-function BossesTab() {
+function BossesTab({ qs, clanId }) {
   const [bosses, setBosses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -138,6 +255,7 @@ function BossesTab() {
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editPoints, setEditPoints] = useState("");
+  const [editEnabled, setEditEnabled] = useState(true);
   const [editCustom, setEditCustom] = useState(false);
   const [editRules, setEditRules] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -145,17 +263,20 @@ function BossesTab() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // In a clan, bosses can only be switched on/off and given their own points and schema; the list is managed in Default.
+  const listQs = clanId ? `${qs}&include_disabled=1` : "";
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setBosses(await apiFetch("/api/attendance-settings/bosses"));
+      setBosses(await apiFetch(`/api/attendance-settings/bosses${listQs}`));
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [listQs]);
 
   useEffect(() => {
     load();
@@ -190,6 +311,7 @@ function BossesTab() {
     setEditId(boss.id);
     setEditName(boss.name);
     setEditPoints(String(boss.default_points));
+    setEditEnabled(boss.enabled !== false);
     setEditCustom(!!boss.point_rules?.length);
     setEditRules(toEditableRules(boss.point_rules));
   }
@@ -199,9 +321,11 @@ function BossesTab() {
     setSaving(true);
     setError("");
     try {
-      await apiFetch(`/api/attendance-settings/bosses/${editId}`, {
+      await apiFetch(`/api/attendance-settings/bosses/${editId}${qs}`, {
         method: "PUT",
-        body: { name: editName.trim(), default_points: Number(editPoints), point_rules: editCustom ? toPayloadRules(editRules) : null },
+        body: clanId
+          ? { enabled: editEnabled, default_points: Number(editPoints), point_rules: editCustom ? toPayloadRules(editRules) : null }
+          : { name: editName.trim(), default_points: Number(editPoints), point_rules: editCustom ? toPayloadRules(editRules) : null },
       });
       setEditId(null);
       await load();
@@ -236,8 +360,10 @@ function BossesTab() {
         When a boss is added to an attendance (manually or by the Discord bot), its points come from the matching time window in the
         <b> Point schemas</b> tab. A boss can have its own schema instead; the default points are used when no window matches.
         Points can still be overridden per spawn. Changing rules never affects past attendances.
+        {clanId && " For a clan you can enable or disable bosses and set their points and schema; add or rename bosses in the Default settings. A disabled boss gives no points and is ignored when the Discord bot reports it."}
       </p>
 
+      {!clanId && (
       <form onSubmit={handleAdd} className={ui.inlineForm} style={{ marginBottom: 16 }}>
         <div className={ui.field} style={{ flex: 1, minWidth: 180 }}>
           <label className={ui.label} htmlFor="boss-add-name">Boss name</label>
@@ -257,6 +383,7 @@ function BossesTab() {
           {addCustom && <div style={{ marginTop: 10 }}><PointRulesEditor rules={addRules} onChange={setAddRules} idPrefix="boss-add" /></div>}
         </div>
       </form>
+      )}
 
       {error && <div className={ui.banner}>{error}</div>}
 
@@ -276,7 +403,16 @@ function BossesTab() {
                   <tr key={boss.id}>
                     <td colSpan={5}>
                       <form onSubmit={handleSave} className={ui.inlineForm}>
-                        <input className={`${ui.input} ${ui.inputSm}`} style={{ flex: 1, minWidth: 160 }} value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={100} required autoFocus aria-label="Boss name" />
+                        {clanId ? (
+                          <>
+                            <b style={{ flex: 1, minWidth: 160, color: "var(--text)" }}>{boss.name}</b>
+                            <label style={{ display: "flex", gap: 6, alignItems: "center", color: "var(--text)" }}>
+                              <input type="checkbox" checked={editEnabled} onChange={(e) => setEditEnabled(e.target.checked)} /> Enabled
+                            </label>
+                          </>
+                        ) : (
+                          <input className={`${ui.input} ${ui.inputSm}`} style={{ flex: 1, minWidth: 160 }} value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={100} required autoFocus aria-label="Boss name" />
+                        )}
                         <input type="number" min="0" className={`${ui.input} ${ui.inputSm} ${styles.pointsInput}`} value={editPoints} onChange={(e) => setEditPoints(e.target.value)} required aria-label="Default points" />
                         <button type="submit" className={`${ui.btnPrimary} ${ui.btnSm}`} disabled={saving || !editName.trim() || editPoints === "" || (editCustom && !!validateRules(editRules))}>{saving ? "Saving…" : "Save"}</button>
                         <button type="button" className={`${ui.btnGhost} ${ui.btnSm}`} onClick={() => setEditId(null)} disabled={saving}>Cancel</button>
@@ -291,7 +427,10 @@ function BossesTab() {
                   </tr>
                 ) : (
                   <tr key={boss.id}>
-                    <td>{boss.name}</td>
+                    <td>
+                      {boss.name}
+                      {boss.enabled === false && <span className={`${ui.badge} ${ui.status_inactive}`} style={{ marginLeft: 8 }}>disabled</span>}
+                    </td>
                     <td>{boss.default_points}</td>
                     <td className={ui.mutedCell}>
                       {boss.point_rules?.length ? boss.point_rules.map((r) => <span key={`${r.start_time}-${r.end_time}-${(r.days ?? []).join("")}`} className={styles.ruleSummary}>{describeRule(r)}</span>) : "Global"}
@@ -300,7 +439,7 @@ function BossesTab() {
                     <td>
                       <div className={ui.actions}>
                         <button className={ui.btnEdit} onClick={() => startEdit(boss)}>Edit</button>
-                        <button className={ui.btnDelete} onClick={() => setDeleteTarget(boss)}>Delete</button>
+                        {!clanId && <button className={ui.btnDelete} onClick={() => setDeleteTarget(boss)}>Delete</button>}
                       </div>
                     </td>
                   </tr>
@@ -328,17 +467,17 @@ function BossesTab() {
 
 /* ───────────── Point schemas ───────────── */
 
-function PointRulesTab() {
+function PointRulesTab({ qs }) {
   const [rules, setRules] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    apiFetch("/api/attendance-settings/point-rules")
+    apiFetch(`/api/attendance-settings/point-rules${qs}`)
       .then((data) => setRules(toEditableRules(data)))
       .catch((err) => setError(err.message));
-  }, []);
+  }, [qs]);
 
   const validationError = rules ? validateRules(rules) : "";
 
@@ -353,7 +492,7 @@ function PointRulesTab() {
     setError("");
     setSaved(false);
     try {
-      const data = await apiFetch("/api/attendance-settings/point-rules", {
+      const data = await apiFetch(`/api/attendance-settings/point-rules${qs}`, {
         method: "PUT",
         body: { rules: toPayloadRules(rules) },
       });
@@ -398,7 +537,7 @@ function PointRulesTab() {
 
 const EMPTY_TEMPLATE = { name: "", days: [0, 1, 2, 3, 4], event_time: "22:30", points: "100" };
 
-function EventsTab() {
+function EventsTab({ qs }) {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -413,13 +552,13 @@ function EventsTab() {
     setLoading(true);
     setError("");
     try {
-      setTemplates(await apiFetch("/api/attendance-settings/event-templates"));
+      setTemplates(await apiFetch(`/api/attendance-settings/event-templates${qs}`));
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [qs]);
 
   useEffect(() => {
     load();
@@ -449,7 +588,7 @@ function EventsTab() {
     setSaving(true);
     setFormError("");
     try {
-      await apiFetch(editId ? `/api/attendance-settings/event-templates/${editId}` : "/api/attendance-settings/event-templates", {
+      await apiFetch(`${editId ? `/api/attendance-settings/event-templates/${editId}` : "/api/attendance-settings/event-templates"}${qs}`, {
         method: editId ? "PUT" : "POST",
         body: { name: form.name.trim(), days: form.days, event_time: form.event_time, points: Number(form.points) },
       });
@@ -465,7 +604,7 @@ function EventsTab() {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await apiFetch(`/api/attendance-settings/event-templates/${deleteTarget.id}`, { method: "DELETE" });
+      await apiFetch(`/api/attendance-settings/event-templates/${deleteTarget.id}${qs}`, { method: "DELETE" });
       setDeleteTarget(null);
       if (editId === deleteTarget.id) resetForm();
       await load();
@@ -580,17 +719,17 @@ function toForm(data) {
   };
 }
 
-function GradesTab() {
+function GradesTab({ qs }) {
   const [values, setValues] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    apiFetch("/api/attendance-settings/grades")
+    apiFetch(`/api/attendance-settings/grades${qs}`)
       .then((data) => setValues(toForm(data)))
       .catch((err) => setError(err.message));
-  }, []);
+  }, [qs]);
 
   function validate(v) {
     for (const g of GRADE_ORDER) {
@@ -622,7 +761,7 @@ function GradesTab() {
     setError("");
     setSaved(false);
     try {
-      const data = await apiFetch("/api/attendance-settings/grades", {
+      const data = await apiFetch(`/api/attendance-settings/grades${qs}`, {
         method: "PUT",
         body: {
           thresholds: Object.fromEntries(GRADE_ORDER.map((g) => [g, Number(values.thresholds[g])])),
