@@ -15,7 +15,38 @@ function getHeaders() {
 }
 
 // Empty color = "auto": the app picks a default from the admin's id.
-const EMPTY_FORM = { name: "", passcode: "", color: "" };
+const EMPTY_FORM = { name: "", passcode: "", color: "", role: "clan_admin", clan_id: "" };
+
+// Superadmin sees every clan; a clan admin is limited to their own clan.
+function RoleFields({ form, clans, onChange }) {
+  return (
+    <>
+      <select
+        className={styles.input}
+        value={form.role}
+        onChange={(e) => onChange({ role: e.target.value, clan_id: e.target.value === "superadmin" ? "" : form.clan_id })}
+        aria-label="Role"
+      >
+        <option value="clan_admin">Clan admin</option>
+        <option value="superadmin">Superadmin</option>
+      </select>
+      {form.role === "clan_admin" && (
+        <select
+          className={styles.input}
+          value={form.clan_id}
+          onChange={(e) => onChange({ clan_id: e.target.value })}
+          aria-label="Clan"
+          required
+        >
+          <option value="">Select clan…</option>
+          {clans.map((clan) => (
+            <option key={clan.id} value={clan.id}>{clan.name}</option>
+          ))}
+        </select>
+      )}
+    </>
+  );
+}
 
 function ColorField({ value, fallback, onChange, allowAuto = true }) {
   return (
@@ -39,6 +70,7 @@ function ColorField({ value, fallback, onChange, allowAuto = true }) {
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState([]);
+  const [clans, setClans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -84,6 +116,13 @@ export default function AdminsPage() {
     fetchAdmins();
   }, [fetchAdmins]);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/api/clans`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setClans)
+      .catch(() => {});
+  }, []);
+
   async function handleAdd(e) {
     e.preventDefault();
     setAddLoading(true);
@@ -92,7 +131,13 @@ export default function AdminsPage() {
       const res = await fetch(`${API_BASE}/api/admins`, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ name: addForm.name.trim(), passcode: addForm.passcode, color: addForm.color || suggestedColor }),
+        body: JSON.stringify({
+          name: addForm.name.trim(),
+          passcode: addForm.passcode,
+          color: addForm.color || suggestedColor,
+          role: addForm.role,
+          clan_id: addForm.role === "clan_admin" ? Number(addForm.clan_id) : null,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -110,7 +155,13 @@ export default function AdminsPage() {
 
   function startEdit(admin) {
     setEditId(admin.id);
-    setEditForm({ name: admin.name, passcode: "", color: admin.color || "" });
+    setEditForm({
+      name: admin.name,
+      passcode: "",
+      color: admin.color || "",
+      role: admin.role || "clan_admin",
+      clan_id: admin.clan_id ? String(admin.clan_id) : "",
+    });
     setEditError("");
   }
 
@@ -125,7 +176,12 @@ export default function AdminsPage() {
     setEditLoading(true);
     setEditError("");
     try {
-      const body = { name: editForm.name.trim(), color: editForm.color || null };
+      const body = {
+        name: editForm.name.trim(),
+        color: editForm.color || null,
+        role: editForm.role,
+        clan_id: editForm.role === "clan_admin" ? Number(editForm.clan_id) : null,
+      };
       if (editForm.passcode) body.passcode = editForm.passcode;
       const res = await fetch(`${API_BASE}/api/admins/${editId}`, {
         method: "PUT",
@@ -195,6 +251,7 @@ export default function AdminsPage() {
             onChange={(e) => setAddForm((f) => ({ ...f, passcode: e.target.value }))}
             required
           />
+          <RoleFields form={addForm} clans={clans} onChange={(patch) => setAddForm((f) => ({ ...f, ...patch }))} />
           <ColorField
             allowAuto={false}
             value={addForm.color}
@@ -204,7 +261,7 @@ export default function AdminsPage() {
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={addLoading || !addForm.name.trim() || !addForm.passcode}
+            disabled={addLoading || !addForm.name.trim() || !addForm.passcode || (addForm.role === "clan_admin" && !addForm.clan_id)}
           >
             {addLoading ? "Adding…" : "Add Admin"}
           </button>
@@ -225,6 +282,7 @@ export default function AdminsPage() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Role / Clan</th>
                 <th>Color</th>
                 <th>Actions</th>
               </tr>
@@ -244,6 +302,17 @@ export default function AdminsPage() {
                       />
                     ) : (
                       admin.name
+                    )}
+                  </td>
+                  <td>
+                    {editId === admin.id ? (
+                      <RoleFields form={editForm} clans={clans} onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))} />
+                    ) : admin.role === "superadmin" ? (
+                      "Superadmin (all clans)"
+                    ) : admin.clan_name ? (
+                      `Clan admin · ${admin.clan_name}`
+                    ) : (
+                      <span className={styles.muted}>No clan assigned</span>
                     )}
                   </td>
                   <td>
@@ -277,7 +346,7 @@ export default function AdminsPage() {
                           <button
                             type="submit"
                             className={styles.btnPrimary}
-                            disabled={editLoading || !editForm.name.trim()}
+                            disabled={editLoading || !editForm.name.trim() || (editForm.role === "clan_admin" && !editForm.clan_id)}
                           >
                             {editLoading ? "Saving…" : "Save"}
                           </button>

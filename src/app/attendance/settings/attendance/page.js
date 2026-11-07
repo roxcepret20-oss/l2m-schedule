@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/attendanceApi";
+import { isClanAdmin, useAdminProfile } from "@/lib/adminProfile";
 import { DAY_SHORT } from "@/lib/weeks";
 import { GRADE_ORDER } from "@/lib/attendanceStandings";
 import { describeRule, emptyRule, toEditableRules, toPayloadRules, validateRules } from "@/lib/pointRules";
@@ -31,6 +32,11 @@ export default function AttendanceSettingsPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [scopeError, setScopeError] = useState("");
+  const [statusLoaded, setStatusLoaded] = useState(false);
+
+  // A clan admin is pinned to their own clan: no Default settings, no clan picker.
+  const profile = useAdminProfile();
+  const restricted = isClanAdmin(profile);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -38,18 +44,25 @@ export default function AttendanceSettingsPage() {
       setClans(list.map((c) => ({ id: c.clan_id, name: c.name })));
       setStatus(Object.fromEntries(list.map((c) => [c.clan_id, c.sections])));
       return list;
-    } catch {
+    } catch (err) {
       // Older API without per-clan settings: only the Default settings are shown.
+      if (err.status === 403) setScopeError(err.message);
       return [];
     }
   }, []);
 
   useEffect(() => {
+    if (profile === undefined) return;
     loadStatus().then((list) => {
-      const saved = Number(localStorage.getItem(CLAN_STORAGE_KEY));
-      if (saved && list.some((c) => c.clan_id === saved)) setClanId(saved);
+      if (isClanAdmin(profile)) {
+        setClanId(list[0]?.clan_id ?? null);
+      } else {
+        const saved = Number(localStorage.getItem(CLAN_STORAGE_KEY));
+        if (saved && list.some((c) => c.clan_id === saved)) setClanId(saved);
+      }
+      setStatusLoaded(true);
     });
-  }, [loadStatus]);
+  }, [loadStatus, profile]);
 
   function pickClan(id) {
     setClanId(id);
@@ -114,8 +127,18 @@ export default function AttendanceSettingsPage() {
         </div>
       </div>
 
-      {clans.length > 0 && <ClanScopeSelect clans={clans} clanId={clanId} onChange={pickClan} />}
+      {clans.length > 0 && !restricted && <ClanScopeSelect clans={clans} clanId={clanId} onChange={pickClan} />}
+      {restricted && clan && (
+        <p className={ui.subtitle} style={{ marginBottom: 12 }}>Settings for <b>{clan.name}</b></p>
+      )}
 
+      {!statusLoaded || (restricted && !clan) ? (
+        <>
+          {scopeError && <div className={ui.banner}>{scopeError}</div>}
+          <p className={ui.muted}>{statusLoaded ? "No clan is assigned to your admin account." : "Loading…"}</p>
+        </>
+      ) : (
+      <>
       <div className={ui.tabs} role="tablist">
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={`${ui.tab} ${tab === t.id ? ui.tabActive : ""}`} onClick={() => setTab(t.id)}>
@@ -145,6 +168,8 @@ export default function AttendanceSettingsPage() {
         {tab === "grades" && <GradesTab key={scopeKey} qs={qs} />}
         {tab === "general" && <GeneralTab key={scopeKey} qs={qs} />}
       </fieldset>
+      </>
+      )}
 
       {copyOpen && clan && (
         <CopyFromModal clan={clan} clans={clans} initialSection={section} onClose={() => setCopyOpen(false)} onSubmit={copySections} />

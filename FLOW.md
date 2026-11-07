@@ -36,7 +36,7 @@ Discord bot → Supabase bosses/events/ffa_day  →  /api/* (30 s CDN cache) →
 8. Voice alarms (`Helper/BossVoice.js`, `EventVoice.js`): `speechSynthesis` at 5, 1, 0 min before spawn.
 
 ## 3. Admin attendance flow (`/attendance/*`, admin JWT → API)
-Login `POST /api/auth/login` → `auth_token` → sidebar pages: `dashboard`, `clans`, `members`, `attendances`, `loans`, `clan-savings`, `settings/*`.
+Login `POST /api/auth/login` → `auth_token` → sidebar pages: `dashboard`, `clans`, `members`, `attendances`, `loans`, `clan-savings`, `settings/*`. **Admin roles (API migration 0023):** the `settings/admins` page lets a superadmin set each admin's role (Clan admin / Superadmin) and clan (`PUT/POST /api/admins`). `src/lib/adminProfile.js` (`useAdminProfile`, from `GET /api/auth/me`, cached per token) drives the UI for a `clan_admin`: `/attendance/attendances` only offers their clan (no clan filter; New-attendance modal lists only their clan) and `/attendance/settings/attendance` shows only their clan (no Default, no clan picker; copy-from offers Default only). Other pages (loans, savings, members…) don't adapt yet and rely on API 403s/filtering. Login returns `admin {id,name,role,clan_id,clan_name}`; `GET /api/clans` stays unfiltered.
 
 **Attendance sheet** (`attendances/[id]/page.js`, lifecycle `created → running → done` driven by the API):
 1. Load `GET /api/attendances/:id` → `days[]` (entries, ticks, `pvp`), standings, income, salaries. Missing `days[].pvp` ⇒ "API is outdated" error (migration 0017 not applied).

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/attendanceApi";
+import { isClanAdmin, useAdminProfile } from "@/lib/adminProfile";
 import { formatWeek, weekOptions } from "@/lib/weeks";
 import { Modal, ConfirmModal } from "../components/Modal";
 import ui from "../components/attendance-ui.module.css";
@@ -55,6 +56,11 @@ export default function AttendancesPage() {
       .catch(() => setClans([]));
   }, []);
 
+  // A clan admin only works with their own clan (the API enforces it too).
+  const profile = useAdminProfile();
+  const restricted = isClanAdmin(profile);
+  const visibleClans = profile === undefined ? [] : restricted ? clans.filter((c) => c.id === profile.clan_id) : clans;
+
   async function confirmDelete() {
     setDeleting(true);
     try {
@@ -90,12 +96,14 @@ export default function AttendancesPage() {
                 <option key={f.value} value={f.value}>{f.label}</option>
               ))}
             </select>
-            <select className={`${ui.select} ${ui.inputSm}`} style={{ width: "auto" }} value={clanFilter} onChange={(e) => setClanFilter(e.target.value)} aria-label="Filter by clan">
-              <option value="">All clans</option>
-              {clans.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            {!restricted && (
+              <select className={`${ui.select} ${ui.inputSm}`} style={{ width: "auto" }} value={clanFilter} onChange={(e) => setClanFilter(e.target.value)} aria-label="Filter by clan">
+                <option value="">All clans</option>
+                {visibleClans.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -155,7 +163,7 @@ export default function AttendancesPage() {
 
       {showNew && (
         <NewAttendanceModal
-          clans={clans}
+          clans={visibleClans}
           onClose={() => setShowNew(false)}
           onCreated={(id) => router.push(`/attendance/attendances/${id}`)}
         />
