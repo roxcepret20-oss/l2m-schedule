@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./dashboard.module.css";
 import MemberMenu from "../MemberMenu";
+import { getSchedulePath, setSchedulePath, clearSchedulePath } from "../../../lib/schedulePath";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -37,6 +38,7 @@ export default function UserDashboardPage() {
   const decodedRealIgn = decodeURIComponent(real_ign);
 
   const [member, setMember] = useState(null);
+  const [schedulePath, setSchedulePathState] = useState("/");
   const [statFields, setStatFields] = useState([]);
   const [stats, setStats] = useState({});
   const [ign, setIgn] = useState("");
@@ -55,6 +57,7 @@ export default function UserDashboardPage() {
   function handleLogout() {
     localStorage.removeItem("user_auth_token");
     localStorage.removeItem("user_real_ign");
+    clearSchedulePath();
     router.replace("/users/login");
   }
 
@@ -88,6 +91,8 @@ export default function UserDashboardPage() {
       }
 
       setMember(profileData);
+      setSchedulePath(profileData.boss_schedule_path);
+      setSchedulePathState(getSchedulePath());
       setIgn(profileData.ign ?? "");
 
       const formulasData = await formulasRes.json();
@@ -175,7 +180,7 @@ export default function UserDashboardPage() {
           <p className={styles.subtitle}>Manage your own stats and gear proof</p>
         </div>
         <div className={styles.headerActions}>
-          <Link href="/" className={styles.btnGhost}>← Schedule</Link>
+          <Link href={schedulePath} className={styles.btnGhost}>← Schedule</Link>
           <MemberMenu />
           <button className={styles.btnGhost} onClick={handleLogout}>
             Logout

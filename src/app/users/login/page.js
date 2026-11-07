@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./login.module.css";
 import DiscordVerify from "../components/DiscordVerify";
+import { setSchedulePath } from "../../../lib/schedulePath";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -34,6 +35,7 @@ export default function UserLoginPage() {
   function finishLogin(data) {
     localStorage.setItem("user_auth_token", data.token);
     localStorage.setItem("user_real_ign", data.user.real_ign);
+    setSchedulePath(data.user.boss_schedule_path);
     router.push(`/users/${encodeURIComponent(data.user.real_ign)}`);
   }
 

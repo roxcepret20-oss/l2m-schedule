@@ -16,7 +16,7 @@ Writers of Supabase data are the Discord bot + crons; the web only reads it. Att
 |---|---|---|---|
 | Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, volume |
 | Admin | `/attendance/*` (public: `/login`, `/members/[ign]`) | `AttendanceAuthLayout` (client redirect; 401 from API → clear token → `/attendance/login`) | `auth_token`, `auth_user` |
-| Member portal | `/users/*` (public: `/login`, `/register`) | `UsersAuthLayout` (401 → `/users/login`) | `user_auth_token`, `user_real_ign` |
+| Member portal | `/users/*` (public: `/login`, `/register`) | `UsersAuthLayout` (401 → `/users/login`) | `user_auth_token`, `user_real_ign`, `user_boss_schedule_path` |
 | Leaderboard | `/leaderboard` | none | — |
 
 `LayoutShell.js` `BARE_ROUTES = ["/attendance","/users","/leaderboard"]` skip PinGate/Navbar/Footer. Real auth enforcement is in the API; web guards are UX only.
@@ -60,7 +60,7 @@ LOGIN     POST /api/users/login → needs_discord_link? yes → DiscordVerify (l
 RESET     reset-password/request → DM code → reset-password {code, new_password}
 AFTER     profile (own stats/gear), /users/attendance/[id] (read-only sanitized sheet incl. PVP + income), /leaderboard
 ```
-Every member page has a way back to the schedule (`← Schedule`, `MemberMenu`).
+Every member page has a way back to the schedule (`← Schedule`, `MemberMenu` → the member's clan `boss_schedule_path`, cached in `localStorage.user_boss_schedule_path`, fallback `/`; set per clan on `/attendance/clans`).
 
 ## 5. Mirrored business logic (must match API)
 `lib/pointRules.js` ↔ API `utils/pointRules.js` · `lib/attendanceStandings.js` ↔ `utils/attendanceGrade.js` + `attendanceController.loadSheet` (PVP) · `lib/money.js` ↔ `utils/money.js`. Known mismatch: web `distributeSalary` floors, API rounds half-up (API is truth).

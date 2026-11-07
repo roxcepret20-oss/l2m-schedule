@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getDefenseStat } from "../../lib/memberStats";
 import styles from "./leaderboard.module.css";
 import MemberMenu from "../users/MemberMenu";
+import { clearSchedulePath } from "../../lib/schedulePath";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -56,6 +57,7 @@ export default function LeaderboardPage() {
       if (membersRes.status === 401) {
         localStorage.removeItem("user_auth_token");
         localStorage.removeItem("user_real_ign");
+        clearSchedulePath();
         router.replace("/users/login");
         return;
       }

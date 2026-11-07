@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./member-menu.module.css";
+import { getSchedulePath } from "../../lib/schedulePath";
 
 // Everything a clan member can open. Add a feature here and it shows up in every page's menu.
+// The Schedule entry goes to the member's clan page (clans.boss_schedule_path), resolved when clicked.
 export const MEMBER_FEATURES = [
-  { label: "Schedule", href: "/" },
+  { label: "Schedule", href: "/", clanSchedule: true },
   { label: "Leaderboard", href: "/leaderboard" },
   { label: "Attendance", href: "/users/attendance" },
 ];
@@ -43,7 +45,7 @@ export default function MemberMenu({ label = "Menu" }) {
       {open && (
         <div className={styles.menu} role="menu">
           {MEMBER_FEATURES.map((feature) => (
-            <button key={feature.href} type="button" role="menuitem" className={styles.item} onClick={() => go(feature.href)}>
+            <button key={feature.href} type="button" role="menuitem" className={styles.item} onClick={() => go(feature.clanSchedule ? getSchedulePath() : feature.href)}>
               {feature.label}
             </button>
           ))}

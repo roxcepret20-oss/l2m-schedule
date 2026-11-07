@@ -1,4 +1,5 @@
 import { API_BASE, ApiError } from "./attendanceApi";
+import { clearSchedulePath } from "./schedulePath";
 
 // Read-only calls with the clan member's token. A 401 logs the member out.
 export async function memberApiFetch(path) {
@@ -22,6 +23,7 @@ export async function memberApiFetch(path) {
   if (res.status === 401 && typeof window !== "undefined") {
     localStorage.removeItem("user_auth_token");
     localStorage.removeItem("user_real_ign");
+    clearSchedulePath();
     window.location.replace("/users/login");
   }
 

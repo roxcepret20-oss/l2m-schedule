@@ -12,12 +12,14 @@ export default function ClansPage() {
 
   // Add form state
   const [addName, setAddName] = useState("");
+  const [addPath, setAddPath] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
 
   // Edit state
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editPath, setEditPath] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -63,11 +65,12 @@ export default function ClansPage() {
       const res = await fetch(`${API_BASE}/api/clans`, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ name: addName }),
+        body: JSON.stringify({ name: addName, boss_schedule_path: addPath.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setAddName("");
+        setAddPath("");
         await fetchClans();
       } else {
         setAddError(data.message || "Failed to add clan.");
@@ -82,12 +85,14 @@ export default function ClansPage() {
   function startEdit(clan) {
     setEditId(clan.id);
     setEditName(clan.name);
+    setEditPath(clan.boss_schedule_path || "");
     setEditError("");
   }
 
   function cancelEdit() {
     setEditId(null);
     setEditName("");
+    setEditPath("");
     setEditError("");
   }
 
@@ -99,7 +104,7 @@ export default function ClansPage() {
       const res = await fetch(`${API_BASE}/api/clans/${editId}`, {
         method: "PUT",
         headers: getHeaders(),
-        body: JSON.stringify({ name: editName }),
+        body: JSON.stringify({ name: editName, boss_schedule_path: editPath.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -156,6 +161,13 @@ export default function ClansPage() {
             onChange={(e) => setAddName(e.target.value)}
             required
           />
+          <input
+            type="text"
+            className={styles.input}
+            placeholder="Boss schedule path (e.g. /?view=sentinel) — empty = /"
+            value={addPath}
+            onChange={(e) => setAddPath(e.target.value)}
+          />
           <button type="submit" className={styles.btnPrimary} disabled={addLoading || !addName.trim()}>
             {addLoading ? "Adding…" : "Add Clan"}
           </button>
@@ -176,6 +188,7 @@ export default function ClansPage() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Boss schedule path</th>
                 <th>Updated By</th>
                 <th>Actions</th>
               </tr>
@@ -194,6 +207,13 @@ export default function ClansPage() {
                           required
                           autoFocus
                         />
+                        <input
+                          type="text"
+                          className={styles.input}
+                          placeholder="Boss schedule path (empty = /)"
+                          value={editPath}
+                          onChange={(e) => setEditPath(e.target.value)}
+                        />
                         {editError && <span className={styles.errorText}>{editError}</span>}
                         <div className={styles.editActions}>
                           <button type="submit" className={styles.btnPrimary} disabled={editLoading || !editName.trim()}>
@@ -208,6 +228,7 @@ export default function ClansPage() {
                       clan.name
                     )}
                   </td>
+                  <td>{clan.boss_schedule_path || <span className={styles.muted}>/ (default)</span>}</td>
                   <td>{clan.updated_by_name || "—"}</td>
                   <td>
                     {editId !== clan.id && (
