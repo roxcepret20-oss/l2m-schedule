@@ -8,5 +8,5 @@ const ALT_NAV_OPTIONS = [
 ];
 
 export default function AltServerNavbar() {
-  return <Navbar logo="Alt Schedule" navOptions={ALT_NAV_OPTIONS} showProfile={false} />;
+  return <Navbar logo="Alt Schedule" navOptions={ALT_NAV_OPTIONS} />;
 }
