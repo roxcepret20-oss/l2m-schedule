@@ -20,6 +20,7 @@ export default function UsersSettingsPage() {
 
   const [deactivateId, setDeactivateId] = useState(null);
   const [deactivateLoading, setDeactivateLoading] = useState(false);
+  const [unlinkId, setUnlinkId] = useState(null);
   const [discordStatus, setDiscordStatus] = useState({});
   const [discordChecking, setDiscordChecking] = useState(false);
 
@@ -69,6 +70,38 @@ export default function UsersSettingsPage() {
     fetchUsers();
   }, [fetchUsers]);
 
+  async function handleUnlinkDiscord(user) {
+    const who = user.discord_username || user.discord_user_id;
+    const note = user.status === "active" ? " They will have to link a Discord account again at their next login." : "";
+    if (!window.confirm(`Unlink Discord "${who}" from ${user.real_ign}? That Discord account can then be used by another member.${note}`)) {
+      return;
+    }
+    setUnlinkId(user.member_id);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/discord/members/${user.member_id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify({ discord_user_id: null }),
+      });
+      if (res.ok) {
+        setDiscordStatus((s) => {
+          const next = { ...s };
+          delete next[user.member_id];
+          return next;
+        });
+        await fetchUsers();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || "Failed to unlink Discord.");
+      }
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setUnlinkId(null);
+    }
+  }
+
   async function handleDeactivate(id) {
     if (!window.confirm("Deactivate this user? They will no longer be able to log in.")) {
       return;
@@ -104,7 +137,7 @@ export default function UsersSettingsPage() {
       <div className={styles.card}>
         <h2 className={styles.sectionTitle}>All Users</h2>
         <p className={styles.muted}>
-          Users whose Discord account is missing or not in our server are likely mules — deactivate them here.{" "}
+          Users whose Discord account is missing or not in our server are likely mules — deactivate them here. To free a Discord account held by a wrong or duplicate account, use <strong>Unlink Discord</strong> (works on inactive users too).{" "}
           <button type="button" className={styles.btnEdit} onClick={checkDiscord} disabled={discordChecking}>
             {discordChecking ? "Checking…" : "Check Discord"}
           </button>
@@ -159,6 +192,15 @@ export default function UsersSettingsPage() {
                         </button>
                       ) : (
                         <span className={styles.muted}>Inactive</span>
+                      )}
+                      {user.discord_user_id && (
+                        <button
+                          className={styles.btnEdit}
+                          onClick={() => handleUnlinkDiscord(user)}
+                          disabled={unlinkId === user.member_id}
+                        >
+                          {unlinkId === user.member_id ? "Unlinking…" : "Unlink Discord"}
+                        </button>
                       )}
                     </div>
                   </td>

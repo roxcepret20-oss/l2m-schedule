@@ -123,3 +123,9 @@
 .footerLink:hover {
   text-decoration: underline;
 }
+
+.divider {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 14px 0;
+}

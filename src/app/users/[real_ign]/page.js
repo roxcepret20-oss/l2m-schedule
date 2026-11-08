@@ -257,12 +257,13 @@ export default function UserDashboardPage() {
                       accept="image/*"
                       onChange={(e) => handleImageChange(name, e)}
                     />
-                    <img
-                      className={styles.imagePreview}
-                      src={imagePreviews[name] || getImageUrl(member[name])}
-                      alt={`${label} gear proof`}
-                      style={{ display: imagePreviews[name] || member[name] ? "block" : "none" }}
-                    />
+                    {(imagePreviews[name] || member[name]) && (
+                      <img
+                        className={styles.imagePreview}
+                        src={imagePreviews[name] || getImageUrl(member[name])}
+                        alt={`${label} gear proof`}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

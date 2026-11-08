@@ -8,7 +8,8 @@ export default function UsersAuthLayout({ children }) {
   const pathname = usePathname();
   const [checked, setChecked] = useState(false);
 
-  const isPublic = pathname === "/users/login" || pathname === "/users/register";
+  const isPublic =
+    pathname === "/users/login" || pathname === "/users/register" || pathname === "/users/discord/callback";
 
   useEffect(() => {
     if (isPublic) {

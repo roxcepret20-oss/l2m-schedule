@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./login.module.css";
 import DiscordVerify from "../components/DiscordVerify";
+import DiscordOAuthButton from "../components/DiscordOAuthButton";
 import { setSchedulePath } from "../../../lib/schedulePath";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -135,7 +136,9 @@ export default function UserLoginPage() {
           <p className={styles.subtitle}>
             Your account has no Discord linked yet. Verify your Discord account to continue.
           </p>
+          <DiscordOAuthButton intent="link" linkToken={linkToken} label="Link with Discord" onError={setError} />
           <DiscordVerify mode="link" linkToken={linkToken} onLinked={finishLogin} onLinkExpired={backToLogin} />
+          {error && <p className={styles.error}>{error}</p>}
           <p className={styles.footerText}>
             <button type="button" className={styles.linkBtn} onClick={() => backToLogin("")}>
               Back to sign in
@@ -218,6 +221,12 @@ export default function UserLoginPage() {
             </button>
           )}
         </form>
+        {!resetMode && (
+          <>
+            <p className={styles.divider}>or</p>
+            <DiscordOAuthButton intent="login" label="Login with Discord" onError={setError} />
+          </>
+        )}
         <p className={styles.footerText}>
           <button type="button" className={styles.linkBtn} onClick={toggleResetMode}>
             {resetMode ? "Back to sign in" : "Forgot password?"}

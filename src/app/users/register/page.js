@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./register.module.css";
 import DiscordVerify from "../components/DiscordVerify";
+import DiscordOAuthButton from "../components/DiscordOAuthButton";
+import verifyStyles from "../components/discord-verify.module.css";
+import { clearVerifiedDiscord, readVerifiedDiscord } from "../../../lib/discordOAuth";
 import { setSchedulePath } from "../../../lib/schedulePath";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -46,6 +49,23 @@ export default function UserRegisterPage() {
   const [error, setError] = useState("");
   const [discordVerification, setDiscordVerification] = useState(null);
   const [verifyKey, setVerifyKey] = useState(0);
+  // Set when the Discord identity was already verified through "Login with Discord".
+  const [oauthDiscordName, setOauthDiscordName] = useState("");
+
+  useEffect(() => {
+    const verified = readVerifiedDiscord();
+    if (verified?.discordId && verified?.token) {
+      setDiscordVerification({ discordId: verified.discordId, token: verified.token });
+      setOauthDiscordName(verified.username || "your Discord account");
+    }
+  }, []);
+
+  function resetDiscordVerification() {
+    clearVerifiedDiscord();
+    setOauthDiscordName("");
+    setDiscordVerification(null);
+    setVerifyKey((k) => k + 1);
+  }
   const fetchClans = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/clans`);
@@ -132,15 +152,13 @@ export default function UserRegisterPage() {
       });
       const data = await res.json();
       if (res.ok && data.token) {
+        clearVerifiedDiscord();
         localStorage.setItem("user_auth_token", data.token);
         localStorage.setItem("user_real_ign", data.user.real_ign);
         setSchedulePath(data.user.boss_schedule_path);
         router.push(`/users/${encodeURIComponent(data.user.real_ign)}`);
       } else {
-        if (res.status === 401) {
-          setDiscordVerification(null);
-          setVerifyKey((k) => k + 1);
-        }
+        if (res.status === 401) resetDiscordVerification();
         setError(data.message || "Failed to register.");
       }
     } catch {
@@ -205,7 +223,20 @@ export default function UserRegisterPage() {
               </div>
 
               <div className={`${styles.formField} ${styles.fullWidth}`}>
-                <DiscordVerify key={verifyKey} mode="register" labelClassName={styles.label} onVerified={setDiscordVerification} />
+                {oauthDiscordName ? (
+                  <>
+                    <label className={styles.label}>Discord</label>
+                    <p className={verifyStyles.success}>✓ Verified with Discord: {oauthDiscordName}</p>
+                    <button type="button" className={verifyStyles.secondaryBtn} onClick={resetDiscordVerification}>
+                      Use a different Discord account
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <DiscordOAuthButton intent="register" label="Register with Discord" onError={setError} />
+                    <DiscordVerify key={verifyKey} mode="register" labelClassName={styles.label} onVerified={setDiscordVerification} />
+                  </>
+                )}
               </div>
 
               <div className={styles.formField}>

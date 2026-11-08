@@ -56,7 +56,12 @@ Login `POST /api/auth/login` → `auth_token` → sidebar pages: `dashboard`, `c
 ## 4. Member portal flow (`/users/*`, member JWT)
 ```
 REGISTER  DiscordVerify (Discord ID → DM code → verify → verification_token) → register form + token → API → member token
-LOGIN     POST /api/users/login → needs_discord_link? yes → DiscordVerify (link) → login payload ; no → token
+LOGIN     POST /api/users/login → needs_discord_link? yes → DiscordVerify (link) or "Link with Discord" (OAuth) → login payload ; no → token
+OAUTH     "Login with Discord" button (DiscordOAuthButton, hidden unless GET /api/users/discord/oauth/config enabled) → lib/discordOAuth.js
+          startDiscordOAuth (state+intent in sessionStorage) → Discord → /users/discord/callback → POST …/oauth/login {code, redirect_uri}
+          token → login ; needs_account → "I already have an account" (real_ign+password once → …/oauth/link) or "I'm new" (verified
+          identity saved in sessionStorage → /users/register skips DiscordVerify) ; intent "link" → …/oauth/link-account {link_token}
+          register page also has "Register with Discord" (same callback, auto-continues to the form)
 RESET     reset-password/request → DM code → reset-password {code, new_password}
 AFTER     profile (own stats/gear), /users/attendance/[id] (read-only sanitized sheet incl. PVP + income), /leaderboard
 ```
