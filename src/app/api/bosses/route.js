@@ -7,7 +7,8 @@ export async function GET(request) {
     const namesParam = searchParams.get("names");
     const source = searchParams.get("source");
     const names = namesParam ? namesParam.split(",").map(n => n.trim()).filter(Boolean) : [];
-    const tableName = source === "duplicate" ? "bosses_duplicate" : "bosses";
+    const TABLES_BY_SOURCE = { duplicate: "bosses_duplicate", farm: "bosses_for_farm" };
+    const tableName = TABLES_BY_SOURCE[source] || "bosses";
     const bosses = await fetchBossContents(category, names, tableName);
     return new Response(JSON.stringify(bosses), {
       headers: { "Content-Type": "application/json", "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },

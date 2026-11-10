@@ -14,7 +14,7 @@ Writers of Supabase data are the Discord bot + crons; the web only reads it. Att
 ## 1. Areas & guards
 | Area | Routes | Guard | Storage |
 |---|---|---|---|
-| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, volume |
+| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, `/farm-server`, `/farm-server/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, volume |
 | Admin | `/attendance/*` (public: `/login`, `/members/[ign]`) | `AttendanceAuthLayout` (client redirect; 401 from API → clear token → `/attendance/login`) | `auth_token`, `auth_user` |
 | Member portal | `/users/*` (public: `/login`, `/register`) | `UsersAuthLayout` (401 → `/users/login`) | `user_auth_token`, `user_real_ign`, `user_boss_schedule_path` |
 | Leaderboard | `/leaderboard` | none | — |
@@ -26,7 +26,7 @@ API helpers: `lib/attendanceApi.js` `apiFetch` (admin token, throws `ApiError`),
 ```
 Discord bot → Supabase bosses/events/ffa_day  →  /api/* (30 s CDN cache) → page.js / BossContainer → cards / pipeline
 ```
-1. `page.js` fetches `/api/bosses` (poll every 2 h; force refresh 00:15 Jakarta), `/api/events`, `/api/ffa-day` once. `?source=duplicate` = `bosses_duplicate` (alt server).
+1. `page.js` fetches `/api/bosses` (poll every 2 h; force refresh 00:15 Jakarta), `/api/events`, `/api/ffa-day` once. `?source=duplicate` = `bosses_duplicate` (alt server); `?source=farm` = `bosses_for_farm` (`/farm-server`, `/farm-server/pipeline`).
 2. **Spawn time** = `kill_timestamp ?? kill_time` + `interval` hours + timezone offset (`TIMEZONES`, hours relative to WIB). `computeSpawnTime` is duplicated in `app/page.js`, `BossContainer.js`, `pipelineGrouping.js` — change all.
 3. `BossContainer` ticks every 5 s; drops items 2 min after spawn. Invasion bosses shown Mon/Wed/Fri only. Sort: nearest first, then points (`ffa`=5, `red`=3).
 4. **Clan split** (`getClanType`, only if `NEXT_PUBLIC_MULTI_CLAN_MODE=true`): FFA/WAR → both; NORMAL & Mon/Wed/Fri ≥08:00 WIB → both; spawn hour <12 → primary clan, else secondary (`NEXT_PUBLIC_CLAN_PRIMARY/SECONDARY`).
