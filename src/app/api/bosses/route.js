@@ -7,7 +7,7 @@ export async function GET(request) {
     const namesParam = searchParams.get("names");
     const source = searchParams.get("source");
     const names = namesParam ? namesParam.split(",").map(n => n.trim()).filter(Boolean) : [];
-    const TABLES_BY_SOURCE = { duplicate: "bosses_duplicate", farm: "bosses_for_farm" };
+    const TABLES_BY_SOURCE = { duplicate: "bosses_duplicate", farm: "bosses_for_farm", e6: "bosses_for_e6" };
     const tableName = TABLES_BY_SOURCE[source] || "bosses";
     const bosses = await fetchBossContents(category, names, tableName);
     return new Response(JSON.stringify(bosses), {

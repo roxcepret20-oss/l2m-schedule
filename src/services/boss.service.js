@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "@/lib/supabase";
 
-const ALLOWED_BOSS_TABLES = new Set(["bosses", "bosses_duplicate", "bosses_for_farm"]);
+const ALLOWED_BOSS_TABLES = new Set(["bosses", "bosses_duplicate", "bosses_for_farm", "bosses_for_e6"]);
 
 export async function fetchBossContents(category, names = [], tableName = "bosses") {
   const safeTableName = ALLOWED_BOSS_TABLES.has(tableName) ? tableName : "bosses";
