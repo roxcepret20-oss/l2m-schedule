@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function ThemeToggle() {
+  const { t } = useLanguage();
   const [theme, setTheme] = useState(null);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function ThemeToggle() {
   return (
     <button
       type="button"
-      aria-label="Toggle theme"
+      aria-label={t("Toggle theme")}
       className="theme-toggle"
       onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
       style={{ padding: 8, borderRadius: 8, background: "transparent", border: "none", cursor: "pointer" }}

@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import bossVoice from "../Helper/BossVoice";
 import eventVoice from "../Helper/EventVoice";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const VOLUME_KEY = "bossVolume";
 
 export default function VolumeSlider() {
+  const { t } = useLanguage();
   const [volume, setVolume] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -70,7 +72,7 @@ export default function VolumeSlider() {
       <button
         type="button"
         className="volume-toggle"
-        aria-label="Boss and event speech volume"
+        aria-label={t("Boss and event speech volume")}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
       >
@@ -86,7 +88,7 @@ export default function VolumeSlider() {
             step="0.05"
             value={volume}
             onChange={handleChange}
-            aria-label="Boss and event speech volume"
+            aria-label={t("Boss and event speech volume")}
             autoFocus
           />
         </div>

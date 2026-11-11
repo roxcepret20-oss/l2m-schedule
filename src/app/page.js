@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import BossContainer from "./components/BossContainer";
 import ThemeSelector from "./components/ThemeSelector";
 import Loader from "./components/ClientSideLoader";
+import LanguageSelect from "./components/LanguageSelect";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../lib/featureFlags";
 
 const TIMEZONES = [
@@ -70,6 +72,7 @@ function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
 
 export default function Bosses() {
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
@@ -182,11 +185,11 @@ export default function Bosses() {
   return (
     <div>
       <div className="tz-bar">
-        <label className="tz-label">Theme</label>
+        <label className="tz-label">{t("Theme")}</label>
         <ThemeSelector theme={theme} onThemeChange={handleThemeChange} />
       </div>
       <div className="tz-bar">
-        <label className="tz-label" htmlFor="tz-select">Timezone</label>
+        <label className="tz-label" htmlFor="tz-select">{t("Timezone")}</label>
         <select
           id="tz-select"
           className="tz-select"
@@ -198,6 +201,7 @@ export default function Bosses() {
           ))}
         </select>
       </div>
+      <LanguageSelect />
       <BossContainer
         key={refreshKey}
         bosses={filteredBosses}

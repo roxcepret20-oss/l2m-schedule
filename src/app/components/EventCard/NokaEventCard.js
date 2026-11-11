@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import styles from "./NokaEventCard.module.css";
 import eventVoice from "../../Helper/EventVoice";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -18,18 +19,18 @@ function parseSpawnToDate(spawn) {
   return null;
 }
 
-function formatCountdown(ms) {
+function formatCountdown(ms, units) {
   if (ms > 0) {
     const totalSec = Math.floor(ms / 1000);
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
     const seconds = totalSec % 60;
-    const s = `${String(seconds).padStart(2, "0")}s`;
-    const m = `${String(minutes).padStart(2, "0")}m`;
-    if (hours > 0) return `${hours}h ${m} ${s}`;
-    return `${minutes}m ${s}`;
+    const s = `${String(seconds).padStart(2, "0")}${units.s}`;
+    const m = `${String(minutes).padStart(2, "0")}${units.m}`;
+    if (hours > 0) return `${hours}${units.h} ${m} ${s}`;
+    return `${minutes}${units.m} ${s}`;
   }
-  return `-${Math.abs(Math.ceil(ms / 1000))}s`;
+  return `-${Math.abs(Math.ceil(ms / 1000))}${units.s}`;
 }
 
 const BADGE_COLORS = [
@@ -40,6 +41,7 @@ const BADGE_COLORS = [
 ];
 
 export default function NokaEventCard({ event }) {
+  const { t, eventName, units } = useLanguage();
   const spawnDateRef = useRef(parseSpawnToDate(event.spawn_time));
   const [now, setNow] = useState(() => Date.now());
   const played5Ref = useRef(false);
@@ -64,7 +66,7 @@ export default function NokaEventCard({ event }) {
 
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
-  const timerText = remaining == null ? "—" : formatCountdown(remaining);
+  const timerText = remaining == null ? "—" : formatCountdown(remaining, units);
 
   useEffect(() => {
     if (remaining == null) return;
@@ -100,9 +102,9 @@ export default function NokaEventCard({ event }) {
       onClick={event.link ? handleClick : undefined}
     >
       <div className={styles.noka_event_content}>
-        <span className={styles.event_badge}>Event</span>
-        <div className={styles.noka_event_name}>{event.name}</div>
-        <div className={styles.noka_event_detail}>Time: {event.spawn_time ?? "—"}</div>
+        <span className={styles.event_badge}>{t("Event")}</span>
+        <div className={styles.noka_event_name}>{eventName(event.name)}</div>
+        <div className={styles.noka_event_detail}>{t("Time:")} {event.spawn_time ?? "—"}</div>
         <div className={styles.noka_event_timer}>
           <svg
             className={styles.timer_icon}
@@ -124,7 +126,7 @@ export default function NokaEventCard({ event }) {
             width="14"
             height="14"
             viewBox="0 0 24 24"
-            aria-label="Updated by"
+            aria-label={t("Updated by")}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}
@@ -145,7 +147,7 @@ export default function NokaEventCard({ event }) {
                   boxShadow: `0 2px 6px ${BADGE_COLORS[i % BADGE_COLORS.length].shadow}`,
                 }}
               >
-                {p} pts
+                {p} {t("pts")}
               </span>
             ))}
           </div>

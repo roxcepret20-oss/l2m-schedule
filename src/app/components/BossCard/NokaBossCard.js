@@ -5,6 +5,7 @@ import styles from "./NokaBossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
 import { getBossPoints, getAltServerBossPoints } from "../../../lib/bossPoints";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
@@ -22,18 +23,18 @@ function parseSpawnToDate(spawn) {
   return null;
 }
 
-function formatCountdown(ms) {
+function formatCountdown(ms, units) {
   if (ms > 0) {
     const totalSec = Math.floor(ms / 1000);
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
     const seconds = totalSec % 60;
-    const s = `${String(seconds).padStart(2, "0")}s`;
-    const m = `${String(minutes).padStart(2, "0")}m`;
-    if (hours > 0) return `${hours}h ${m} ${s}`;
-    return `${minutes}m ${s}`;
+    const s = `${String(seconds).padStart(2, "0")}${units.s}`;
+    const m = `${String(minutes).padStart(2, "0")}${units.m}`;
+    if (hours > 0) return `${hours}${units.h} ${m} ${s}`;
+    return `${minutes}${units.m} ${s}`;
   }
-  return `-${Math.abs(Math.ceil(ms / 1000))}s`;
+  return `-${Math.abs(Math.ceil(ms / 1000))}${units.s}`;
 }
 
 function formatSpawnDisplay(spawn) {
@@ -75,6 +76,7 @@ function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0,
 }
 
 export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altServer = false }) {
+  const { t, bossName, units } = useLanguage();
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
   const [now, setNow] = useState(() => Date.now());
 
@@ -84,7 +86,7 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", a
 
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
-  const timerText = remaining == null ? "—" : formatCountdown(remaining);
+  const timerText = remaining == null ? "—" : formatCountdown(remaining, units);
 
   const LATE_TOLERANCE_MS = 10000;
   const isVisible = typeof document === "undefined" ? true : !document.hidden;
@@ -143,9 +145,9 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", a
       aria-live="polite"
     >
       <div className={styles.noka_content}>
-        <div className={styles.noka_boss_name}>{boss.name}</div>
+        <div className={styles.noka_boss_name}>{bossName(boss.name)}</div>
         <div className={styles.noka_detail}>
-          Spawn: {formatSpawnDisplay(boss.spawn_time)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
+          {t("Spawn:")} {formatSpawnDisplay(boss.spawn_time)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
         </div>
         <div className={styles.noka_timer}>
           <svg className={styles.timer_icon} width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -160,7 +162,7 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", a
               width="14"
               height="14"
               viewBox="0 0 24 24"
-              aria-label="Updated by"
+              aria-label={t("Updated by")}
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}
@@ -173,7 +175,7 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", a
         )}
         {pointsInfo && (
           <span className={`${styles.noka_points_badge} ${styles[`pts_${pointsInfo.points}`]}`}>
-            {pointsInfo.points} pts
+            {pointsInfo.points} {t("pts")}
           </span>
         )}
       </div>

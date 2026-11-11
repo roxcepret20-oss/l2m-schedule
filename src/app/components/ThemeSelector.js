@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const THEMES = [
   { value: "simple", label: "Simple" },
@@ -8,6 +9,7 @@ const THEMES = [
 ];
 
 export default function ThemeSelector({ theme, onThemeChange }) {
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -44,7 +46,7 @@ export default function ThemeSelector({ theme, onThemeChange }) {
         <span className={`nav-dropdown-caret ${isOpen ? "open" : ""}`} aria-hidden="true">▾</span>
       </button>
       {isOpen && (
-        <div className="nav-dropdown-menu" role="menu" aria-label="Select theme">
+        <div className="nav-dropdown-menu" role="menu" aria-label={t("Select theme")}>
           {THEMES.map(t => (
             <button
               key={t.value}

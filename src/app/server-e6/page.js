@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import BossContainer from "../components/BossContainer";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/featureFlags";
 import Loader from "../components/ClientSideLoader";
+import LanguageSelect from "../components/LanguageSelect";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const TIMEZONES = [
   { key: "WIB",  label: "WIB — West Indonesia (UTC+7)",  offset: 0 },
@@ -70,6 +72,7 @@ function getClanType(spawnDate, tzOffset = 0, category, ffaMode = "NORMAL") {
 
 export default function ServerE6Bosses() {
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
@@ -169,9 +172,9 @@ export default function ServerE6Bosses() {
 
   return (
     <div>
-      <div className="page-title">ServerE6 Boss Schedule</div>
+      <div className="page-title">{t("ServerE6 Boss Schedule")}</div>
       <div className="tz-bar">
-        <label className="tz-label" htmlFor="tz-select">Timezone</label>
+        <label className="tz-label" htmlFor="tz-select">{t("Timezone")}</label>
         <select
           id="tz-select"
           className="tz-select"
@@ -183,6 +186,7 @@ export default function ServerE6Bosses() {
           ))}
         </select>
       </div>
+      <LanguageSelect />
       <BossContainer
         key={refreshKey}
         bosses={filteredBosses}

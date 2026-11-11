@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const AUTH_KEY = "shatter_authed";
 
 export default function PinGate({ children }) {
+  const { t } = useLanguage();
   const [authed, setAuthed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [pin, setPin] = useState("");
@@ -67,7 +69,7 @@ export default function PinGate({ children }) {
     <div className="pin-overlay">
       <div className="pin-card">
         <h1 className="pin-title">Shatter Schedule</h1>
-        <p className="pin-subtitle">Enter your PIN to continue</p>
+        <p className="pin-subtitle">{t("Enter your PIN to continue")}</p>
         <form onSubmit={handleSubmit} className="pin-form">
           <input
             type="password"
@@ -79,9 +81,9 @@ export default function PinGate({ children }) {
             autoFocus
             maxLength={32}
           />
-          {error && <p className="pin-error">{error}</p>}
+          {error && <p className="pin-error">{t(error)}</p>}
           <button type="submit" className="pin-btn" disabled={loading || !pin}>
-            {loading ? "Checking…" : "Unlock"}
+            {loading ? t("Checking…") : t("Unlock")}
           </button>
         </form>
       </div>

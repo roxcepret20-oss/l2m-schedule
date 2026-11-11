@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import VolumeSlider from "./VolumeSlider";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const DEFAULT_NAV_OPTIONS = [
   { value: "card", label: "Card", href: "/" },
@@ -13,6 +14,7 @@ const DEFAULT_NAV_OPTIONS = [
 
 export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_NAV_OPTIONS, showProfile = true }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -41,7 +43,7 @@ export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_
 
   return (
     <nav className="navbar">
-      <div className="logo">{logo}</div>
+      <div className="logo">{t(logo)}</div>
       <div className="nav-items">
         <div className="nav-dropdown" ref={menuRef}>
           <button
@@ -51,12 +53,12 @@ export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_
             aria-expanded={isOpen}
             onClick={() => setIsOpen((prev) => !prev)}
           >
-            <span>{selectedOption.label}</span>
+            <span>{t(selectedOption.label)}</span>
             <span className={`nav-dropdown-caret ${isOpen ? "open" : ""}`} aria-hidden="true">▾</span>
           </button>
 
           {isOpen && (
-            <div className="nav-dropdown-menu" role="menu" aria-label="Switch page">
+            <div className="nav-dropdown-menu" role="menu" aria-label={t("Switch page")}>
               {navOptions.map((option) => {
                 const active = option.value === selectedValue;
                 return (
@@ -71,7 +73,7 @@ export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_
                       router.push(option.href);
                     }}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -79,7 +81,7 @@ export default function Navbar({ logo = "Shatter Company", navOptions = DEFAULT_
           )}
         </div>
       </div>
-       {showProfile && <Link href="/users" className="nav-profile-link">My Profile</Link>}
+       {showProfile && <Link href="/users" className="nav-profile-link">{t("My Profile")}</Link>}
        <VolumeSlider />
        <ThemeToggle />
     </nav>

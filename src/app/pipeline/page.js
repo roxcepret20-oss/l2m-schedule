@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import PipelineContainer from "../components/Pipeline/PipelineContainer";
 import Loader from "../components/ClientSideLoader";
+import LanguageSelect from "../components/LanguageSelect";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import styles from "../components/Pipeline/Pipeline.module.css";
 
 const TIMEZONES = [
@@ -19,6 +21,7 @@ const TIMEZONES = [
 
 export default function PipelinePage() {
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
@@ -74,7 +77,7 @@ export default function PipelinePage() {
   return (
     <div>
       <div className="tz-bar">
-        <label className="tz-label" htmlFor="pipeline-tz-select">Timezone</label>
+        <label className="tz-label" htmlFor="pipeline-tz-select">{t("Timezone")}</label>
         <select
           id="pipeline-tz-select"
           className="tz-select"
@@ -86,9 +89,10 @@ export default function PipelinePage() {
           ))}
         </select>
       </div>
+      <LanguageSelect />
       <div className={styles.pageHeader}>
-        <h1>Boss Pipelines</h1>
-        <p>Bosses &amp; events grouped by spawn-time chains</p>
+        <h1>{t("Boss Pipelines")}</h1>
+        <p>{t("Bosses & events grouped by spawn-time chains")}</p>
       </div>
       <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} />
     </div>

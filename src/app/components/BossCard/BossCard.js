@@ -5,6 +5,7 @@ import styles from "./BossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
 import { getBossPoints, getAltServerBossPoints } from "../../../lib/bossPoints";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 function parseSpawnToDate(spawn) {
   if (!spawn) return null;
   if (spawn instanceof Date) return spawn;
@@ -23,19 +24,19 @@ function parseSpawnToDate(spawn) {
   return null;
 }
 
-function formatCountdown(ms) {
+function formatCountdown(ms, units) {
   if (ms > 0) {
     const totalSec = Math.floor(ms / 1000);
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
     const seconds = totalSec % 60;
-    const s = `${String(seconds).padStart(2, "0")}s`;
-    const m = `${String(minutes).padStart(2, "0")}m`;
-    if (hours > 0) return `${hours}h ${m} ${s}`;
-    return `${minutes}m ${s}`;
+    const s = `${String(seconds).padStart(2, "0")}${units.s}`;
+    const m = `${String(minutes).padStart(2, "0")}${units.m}`;
+    if (hours > 0) return `${hours}${units.h} ${m} ${s}`;
+    return `${minutes}${units.m} ${s}`;
   }
   // expired: count up negatively until BossContainer removes the card (~60s)
-  return `-${Math.abs(Math.ceil(ms / 1000))}s`;
+  return `-${Math.abs(Math.ceil(ms / 1000))}${units.s}`;
 }
 
 function formatSpawnDisplay(spawn) {
@@ -72,6 +73,7 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
 }
 
 export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altServer = false }) {
+  const { t, bossName, units } = useLanguage();
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
 
   const [now, setNow] = useState(() => Date.now());
@@ -82,7 +84,7 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altSe
 
   const target = spawnDateRef.current;
   const remaining = target ? target.getTime() - now : null;
-  const timerText = remaining == null ? "—" : formatCountdown(remaining);
+  const timerText = remaining == null ? "—" : formatCountdown(remaining, units);
 
   const LATE_TOLERANCE_MS = 10000; // 10s max late
   const isVisible = typeof document === "undefined" ? true : !document.hidden;
@@ -137,8 +139,8 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altSe
   return (
     <div className={`card-container ${cardStyleForBossType()}`} aria-live="polite">
       {boss.type === "invasion" && (
-        <span className={styles.invasion_badge} title="Invasion">
-          <img src="/invasion-icon.png" alt="Invasion" width={42} height={42} />
+        <span className={styles.invasion_badge} title={t("Invasion")}>
+                  <img src="/invasion-icon.png" alt={t("Invasion")} width={42} height={42} />
         </span>
       )}
       {boss.type !== "invasion" && (() => {
@@ -162,9 +164,9 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altSe
           </span>
         );
       })()}
-     <div className="card-boss-name">{boss.name}</div>
+     <div className="card-boss-name">{bossName(boss.name)}</div>
       <div className="card-detail">
-        Spawn: {formatSpawnDisplay(boss.spawn_time)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
+        {t("Spawn:")} {formatSpawnDisplay(boss.spawn_time)} {boss.percentage != null ? `(${boss.percentage}%)` : ""}
       </div>
       <div className="card-timer">
         <svg className="timer-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -179,7 +181,7 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altSe
             width="14"
             height="14"
             viewBox="0 0 24 24"
-            aria-label="Updated by"
+            aria-label={t("Updated by")}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}
@@ -192,7 +194,7 @@ export default function BossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altSe
       )}
       {pointsInfo && (
         <span className={`${styles.points_badge} ${styles[`pts_${pointsInfo.points}`]}`}>
-          {pointsInfo.points} pts
+          {pointsInfo.points} {t("pts")}
         </span>
       )}
     </div>

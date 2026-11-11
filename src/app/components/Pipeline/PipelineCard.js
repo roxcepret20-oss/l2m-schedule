@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCountdown, formatSpawnDisplay, getCountdownUrgency } from "@/lib/pipelineGrouping";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import styles from "./Pipeline.module.css";
 
 function pointsBadgeClass(points) {
@@ -13,14 +14,19 @@ function pointsBadgeClass(points) {
 }
 
 export default function PipelineCard({ group, now, isNextUp }) {
+  const { lang, t, bossName, eventName, units } = useLanguage();
   const startRemaining = group.start.getTime() - now;
-  const badgeLabel = group.isSingle ? "SINGLE" : isNextUp ? "NEXT UP" : "CHAIN";
+  const badgeLabel = t(group.isSingle ? "SINGLE" : isNextUp ? "NEXT UP" : "CHAIN");
+  const minutesLabel = lang === "th"
+    ? `${group.spanMinutes} ${t("Minutes")}`
+    : `${group.spanMinutes} Minute${group.spanMinutes === 1 ? "" : "s"}`;
   const title = group.isSingle
-    ? "Solo Spawn"
-    : `Boss Chain · ${group.spanMinutes} Minute${group.spanMinutes === 1 ? "" : "s"}`;
+    ? t("Solo Spawn")
+    : `${t("Boss Chain")} · ${minutesLabel}`;
+  const spawnsLabel = (n) => `${n} ${t(n === 1 ? "spawn" : "spawns")}`;
   const subtitle = group.isSingle
-    ? `${formatSpawnDisplay(group.start)} · 1 spawn`
-    : `${formatSpawnDisplay(group.start)} → ${formatSpawnDisplay(group.end)} · ${group.items.length} spawns`;
+    ? `${formatSpawnDisplay(group.start)} · ${spawnsLabel(1)}`
+    : `${formatSpawnDisplay(group.start)} → ${formatSpawnDisplay(group.end)} · ${spawnsLabel(group.items.length)}`;
 
   return (
     <div className={`${styles.pipelineCard} ${isNextUp ? styles.nextUp : ""}`}>
@@ -33,9 +39,9 @@ export default function PipelineCard({ group, now, isNextUp }) {
           </div>
         </div>
         <div className={styles.pipelineMeta}>
-          Starts in
+          {t("Starts in")}
           <br />
-          <b>{formatCountdown(startRemaining)}</b>
+          <b>{formatCountdown(startRemaining, units)}</b>
         </div>
       </div>
       <ul className={styles.timeline}>
@@ -49,17 +55,17 @@ export default function PipelineCard({ group, now, isNextUp }) {
               </div>
               <div className={styles.itemMain}>
                 <div className={styles.itemName}>
-                  {item.name}
+                  {item._type === "event" ? eventName(item.name) : bossName(item.name)}
                   {item.tag && (
-                    <span className={`${styles.tag} ${styles[`tag_${item.tag.toLowerCase()}`]}`}>{item.tag}</span>
+                    <span className={`${styles.tag} ${styles[`tag_${item.tag.toLowerCase()}`]}`}>{t(item.tag)}</span>
                   )}
                   {item.points && item.points.map((pts, i) => (
-                    <span key={i} className={`${styles.ptsBadge} ${pointsBadgeClass(pts)}`}>{pts} pts</span>
+                    <span key={i} className={`${styles.ptsBadge} ${pointsBadgeClass(pts)}`}>{pts} {t("pts")}</span>
                   ))}
                 </div>
                 <div className={styles.itemTime}>{formatSpawnDisplay(item.spawnDate)}</div>
               </div>
-              <div className={`${styles.countdown} ${styles[`countdown_${urgency}`]}`}>{formatCountdown(remaining)}</div>
+              <div className={`${styles.countdown} ${styles[`countdown_${urgency}`]}`}>{formatCountdown(remaining, units)}</div>
             </li>
           );
         })}

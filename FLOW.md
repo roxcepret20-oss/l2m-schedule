@@ -14,7 +14,7 @@ Writers of Supabase data are the Discord bot + crons; the web only reads it. Att
 ## 1. Areas & guards
 | Area | Routes | Guard | Storage |
 |---|---|---|---|
-| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, `/farm-server`, `/farm-server/pipeline`, `/server-e6`, `/server-e6/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, volume |
+| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, `/farm-server`, `/farm-server/pipeline`, `/server-e6`, `/server-e6/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, `lang` (en/th, see `src/lib/i18n/`), volume |
 | Admin | `/attendance/*` (public: `/login`, `/members/[ign]`) | `AttendanceAuthLayout` (client redirect; 401 from API → clear token → `/attendance/login`) | `auth_token`, `auth_user` |
 | Member portal | `/users/*` (public: `/login`, `/register`) | `UsersAuthLayout` (401 → `/users/login`) | `user_auth_token`, `user_real_ign`, `user_boss_schedule_path` |
 | Leaderboard | `/leaderboard` | none | — |
@@ -33,7 +33,8 @@ Discord bot → Supabase bosses/events/ffa_day  →  /api/* (30 s CDN cache) →
 5. **Points badge** (`lib/bossPoints.js`): 00:00–07:59 → 5; 08:00–23:59 → 5 on Mon/Wed/Fri else 3. `/alt-server` uses `getAltServerBossPoints` (00–07:59: ffa/red 5, others 2; 08–23:59: ffa/red 3, others 1; every day).
 6. `/pipeline`: items chained into pipelines (gap >10 min starts a new one) — `lib/pipelineGrouping.js`, `components/Pipeline/*`.
 7. Events: `events.time` jsonb `{days[0=Mon], time:"HHMM", points, places{day:[place by rotation]}, link}`; `rotation` bumped weekly by the bot cron.
-8. Voice alarms (`Helper/BossVoice.js`, `EventVoice.js`): `speechSynthesis` at 5, 1, 0 min before spawn.
+8. Voice alarms (`Helper/BossVoice.js`, `EventVoice.js`): `speechSynthesis` at 5, 1, 0 min before spawn (always English).
+9. Language: a `LanguageSelect` row under Timezone switches EN/TH (`localStorage.lang`); `LanguageProvider` (in `LayoutShell`) feeds `t()` / `bossName()` / `eventName()` to cards, pipeline, navbar, footer — display only.
 
 ## 3. Admin attendance flow (`/attendance/*`, admin JWT → API)
 Login `POST /api/auth/login` → `auth_token` → sidebar pages: `dashboard`, `clans`, `members`, `attendances`, `loans`, `clan-savings`, `settings/*`. **Admin roles (API migration 0023):** the `settings/admins` page lets a superadmin set each admin's role (Clan admin / Superadmin) and clan (`PUT/POST /api/admins`). `src/lib/adminProfile.js` (`useAdminProfile`, from `GET /api/auth/me`, cached per token) drives the UI for a `clan_admin`: `/attendance/attendances` only offers their clan (no clan filter; New-attendance modal lists only their clan) and `/attendance/settings/attendance` shows only their clan (no Default, no clan picker; copy-from offers Default only). Other pages (loans, savings, members…) don't adapt yet and rely on API 403s/filtering. Login returns `admin {id,name,role,clan_id,clan_name}`; `GET /api/clans` stays unfiltered.

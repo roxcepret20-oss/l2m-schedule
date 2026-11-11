@@ -6,12 +6,14 @@ import { buildPipelineItems, filterPipelineItems, groupIntoPipelines } from "@/l
 import bossVoice from "../../Helper/BossVoice";
 import eventVoice from "../../Helper/EventVoice";
 import styles from "./Pipeline.module.css";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 const ONE_MIN_MS = 60 * 1000;
 const LATE_TOLERANCE_MS = 10 * 1000; // matches BossCard/EventCard's alert windows
 
 export default function PipelineContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", view = "all", altServer = false }) {
+  const { t } = useLanguage();
   const [now, setNow] = useState(() => Date.now());
   const [items, setItems] = useState(() => filterPipelineItems(buildPipelineItems(bosses, events, tzOffset, ffaMode, altServer), view));
 
@@ -124,7 +126,7 @@ export default function PipelineContainer({ bosses = [], events = [], tzOffset =
   }, [now, items]);
 
   if (groups.length === 0) {
-    return <div className={styles.emptyState}>No upcoming bosses or events right now.</div>;
+    return <div className={styles.emptyState}>{t("No upcoming bosses or events right now.")}</div>;
   }
 
   // Plain divs (no framer-motion) so pipeline cards always render reliably.

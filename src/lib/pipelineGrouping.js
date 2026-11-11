@@ -184,18 +184,18 @@ export function getCountdownUrgency(remainingMs) {
   return "safe";
 }
 
-export function formatCountdown(ms) {
+export function formatCountdown(ms, units = { h: "h", m: "m", s: "s" }) {
   if (ms > 0) {
     const totalSec = Math.floor(ms / 1000);
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
     const seconds = totalSec % 60;
-    const s = `${String(seconds).padStart(2, "0")}s`;
-    const m = `${String(minutes).padStart(2, "0")}m`;
-    if (hours > 0) return `${hours}h ${m} ${s}`;
-    return `${minutes}m ${s}`;
+    const s = `${String(seconds).padStart(2, "0")}${units.s}`;
+    const m = `${String(minutes).padStart(2, "0")}${units.m}`;
+    if (hours > 0) return `${hours}${units.h} ${m} ${s}`;
+    return `${minutes}${units.m} ${s}`;
   }
-  return `-${Math.abs(Math.ceil(ms / 1000))}s`;
+  return `-${Math.abs(Math.ceil(ms / 1000))}${units.s}`;
 }
 
 export function formatSpawnDisplay(spawnDate) {
