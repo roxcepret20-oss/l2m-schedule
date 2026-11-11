@@ -14,7 +14,7 @@ Writers of Supabase data are the Discord bot + crons; the web only reads it. Att
 ## 1. Areas & guards
 | Area | Routes | Guard | Storage |
 |---|---|---|---|
-| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline`, `/farm-server`, `/farm-server/pipeline`, `/server-e6`, `/server-e6/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, `lang` (en/th, see `src/lib/i18n/`), volume |
+| Public schedule | `/`, `/pipeline`, `/alt-server`, `/alt-server/pipeline` (**closed**: redirect → `/forbidden-page` via `next.config.mjs`, flag `ALT_SERVER_CLOSED`), `/farm-server`, `/farm-server/pipeline`, `/server-e6`, `/server-e6/pipeline`, (`/ffa-bosses` → `/`) | `PinGate` (soft; raw PIN in `localStorage.shatter_authed`, re-validated via `POST /api/validate-pin` against Supabase `pin_validation`; network error keeps user authed) | `theme`, `tzKey`, `lang` (en/th, see `src/lib/i18n/`), volume |
 | Admin | `/attendance/*` (public: `/login`, `/members/[ign]`) | `AttendanceAuthLayout` (client redirect; 401 from API → clear token → `/attendance/login`) | `auth_token`, `auth_user` |
 | Member portal | `/users/*` (public: `/login`, `/register`) | `UsersAuthLayout` (401 → `/users/login`) | `user_auth_token`, `user_real_ign`, `user_boss_schedule_path` |
 | Leaderboard | `/leaderboard` | none | — |

@@ -9,7 +9,7 @@ import Footer from "./footer";
 import PinGate from "./PinGate";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
-const BARE_ROUTES = ["/attendance", "/users", "/leaderboard"];
+const BARE_ROUTES = ["/attendance", "/users", "/leaderboard", "/forbidden-page"];
 
 export default function LayoutShell({ children }) {
   const pathname = usePathname() || "/";
