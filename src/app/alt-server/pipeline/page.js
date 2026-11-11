@@ -94,7 +94,7 @@ export default function AltServerPipelinePage() {
         <h1>{t("Alt Server Pipelines")}</h1>
         <p>{t("Bosses & events grouped by spawn-time chains")}</p>
       </div>
-      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} altServer />
+      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} />
     </div>
   );
 }

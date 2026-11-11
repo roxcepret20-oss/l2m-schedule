@@ -6,6 +6,7 @@ import NokaBossCard from "./BossCard/NokaBossCard";
 import EventCard from "./EventCard/EventCard";
 import NokaEventCard from "./EventCard/NokaEventCard";
 import { motion, AnimatePresence } from "framer-motion";
+import { resolveEventPoints } from "../../lib/attendancePoints";
 
 function computeSpawnTime(kill_time, interval, tzOffset = 0) {
   if (!kill_time) return null;
@@ -88,18 +89,20 @@ function resolveEventPlace(e, today) {
   return arr[e.rotation] ?? null;
 }
 
-function processEvents(events, tzOffset = 0) {
+function processEvents(events, tzOffset = 0, pointsConfig = null) {
   const today = toEventDayIndex(new Date().getDay());
   return events
     .filter(e => e.is_active && Array.isArray(e.time?.days) && e.time.days.includes(today))
     .map(e => {
       const place = resolveEventPlace(e, today);
+      const name = place ? `${e.name} - ${place}` : e.name;
       return {
         ...e,
         _type: "event",
-        name: place ? `${e.name} - ${place}` : e.name,
+        name,
         spawn_time: computeEventSpawnTime(e.time.time, tzOffset),
-        points: e.time.points ?? null,
+        // Points come from the attendance settings, matched by event name; unlisted events have none.
+        points: resolveEventPoints(pointsConfig, [name, e.name], today),
         link: e.link ?? e.time.link ?? null,
       };
     });
@@ -125,9 +128,9 @@ function withSpawnSorted(list, tzOffset = 0) {
     });
 }
 
-function mergeAndSort(bosses, events, tzOffset = 0) {
+function mergeAndSort(bosses, events, tzOffset = 0, pointsConfig = null) {
   const bossList = withSpawnSorted(bosses, tzOffset).map(b => ({ ...b, _type: "boss" }));
-  const eventList = processEvents(events, tzOffset);
+  const eventList = processEvents(events, tzOffset, pointsConfig);
   const combined = [...bossList, ...eventList];
   const now = Date.now();
   return combined.sort((a, b) => {
@@ -139,15 +142,15 @@ function mergeAndSort(bosses, events, tzOffset = 0) {
   });
 }
 
-export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", theme = "simple", altServer = false }) {
+export default function BossContainer({ bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", theme = "simple", pointsConfig = null }) {
   const [now, setNow] = useState(() => Date.now());
 
-  const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset));
+  const [visibleItems, setVisibleItems] = useState(() => mergeAndSort(bosses, events, tzOffset, pointsConfig));
 
   // keep local copy in sync when props or timezone changes
   useEffect(() => {
-    setVisibleItems(mergeAndSort(bosses, events, tzOffset));
-  }, [bosses, events, tzOffset]);
+    setVisibleItems(mergeAndSort(bosses, events, tzOffset, pointsConfig));
+  }, [bosses, events, tzOffset, pointsConfig]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5 * 1000);
@@ -201,8 +204,8 @@ export default function BossContainer({ bosses = [], events = [], tzOffset = 0, 
                 ? <NokaEventCard event={item} />
                 : <EventCard event={item} />
               : theme === "noka"
-                ? <NokaBossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} altServer={altServer} />
-                : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} altServer={altServer} />}
+                ? <NokaBossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} pointsConfig={pointsConfig} />
+                : <BossCard boss={item} tzOffset={tzOffset} ffaMode={ffaMode} pointsConfig={pointsConfig} />}
           </motion.div>
         ))}
       </AnimatePresence>

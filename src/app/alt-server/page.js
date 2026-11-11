@@ -193,7 +193,6 @@ export default function AltServerBosses() {
         events={events}
         tzOffset={tzOffset}
         ffaMode={ffaMode}
-        altServer
       />
     </div>
   );

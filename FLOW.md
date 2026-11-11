@@ -30,7 +30,7 @@ Discord bot → Supabase bosses/events/ffa_day  →  /api/* (30 s CDN cache) →
 2. **Spawn time** = `kill_timestamp ?? kill_time` + `interval` hours + timezone offset (`TIMEZONES`, hours relative to WIB). `computeSpawnTime` is duplicated in `app/page.js`, `BossContainer.js`, `pipelineGrouping.js` — change all.
 3. `BossContainer` ticks every 5 s; drops items 2 min after spawn. Invasion bosses shown Mon/Wed/Fri only. Sort: nearest first, then points (`ffa`=5, `red`=3).
 4. **Clan split** (`getClanType`, only if `NEXT_PUBLIC_MULTI_CLAN_MODE=true`): FFA/WAR → both; NORMAL & Mon/Wed/Fri ≥08:00 WIB → both; spawn hour <12 → primary clan, else secondary (`NEXT_PUBLIC_CLAN_PRIMARY/SECONDARY`).
-5. **Points badge** (`lib/bossPoints.js`): 00:00–07:59 → 5; 08:00–23:59 → 5 on Mon/Wed/Fri else 3. `/alt-server` uses `getAltServerBossPoints` (00–07:59: ffa/red 5, others 2; 08–23:59: ffa/red 3, others 1; every day).
+5. **Points badge** (`lib/attendancePoints.js` + `lib/useSchedulePoints.js`): from the attendance API's public `GET /api/schedule-points?path=` — `/` & `/pipeline` → path `/` (Breaker), `/farm-server*` → `/farm-server` (SixthSense); `/alt-server*`, `/server-e6*` show no points. Boss: in the clan's attendance list → own rules → global scheme (day + WIB time window) → `default_points`; event: matched by name; unlisted/unreachable → no badge.
 6. `/pipeline`: items chained into pipelines (gap >10 min starts a new one) — `lib/pipelineGrouping.js`, `components/Pipeline/*`.
 7. Events: `events.time` jsonb `{days[0=Mon], time:"HHMM", points, places{day:[place by rotation]}, link}`; `rotation` bumped weekly by the bot cron.
 8. Voice alarms (`Helper/BossVoice.js`, `EventVoice.js`): `speechSynthesis` at 5, 1, 0 min before spawn (always English).

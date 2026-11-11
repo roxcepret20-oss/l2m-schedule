@@ -7,6 +7,7 @@ import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../lib/feature
 import Loader from "../components/ClientSideLoader";
 import LanguageSelect from "../components/LanguageSelect";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useSchedulePoints } from "@/lib/useSchedulePoints";
 
 const TIMEZONES = [
   { key: "WIB",  label: "WIB — West Indonesia (UTC+7)",  offset: 0 },
@@ -74,6 +75,7 @@ export default function FarmServerBosses() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
+  const pointsConfig = useSchedulePoints("/farm-server");
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -193,7 +195,7 @@ export default function FarmServerBosses() {
         events={events}
         tzOffset={tzOffset}
         ffaMode={ffaMode}
-        altServer
+        pointsConfig={pointsConfig}
       />
     </div>
   );

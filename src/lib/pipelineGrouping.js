@@ -2,7 +2,7 @@
 // chronological timeline, then splits that timeline into "pipelines" (chains)
 // wherever the gap between two consecutive spawns exceeds GAP_MS.
 
-import { getBossPoints, getAltServerBossPoints } from "./bossPoints";
+import { resolveBossPoints, resolveEventPoints } from "./attendancePoints";
 
 export const PIPELINE_GAP_MS = 10 * 60 * 1000; // 10 minutes
 const EXPIRY_MS = 2 * 60 * 1000; // keep items visible until 2min after spawn
@@ -56,14 +56,10 @@ function tagForBoss(boss) {
   return null;
 }
 
-// Same rule as the boss list cards (see lib/bossPoints.js), so the pipeline shows the
-// exact same points a boss would award there.
-// On /alt-server/pipeline every category awards points (getAltServerBossPoints).
-function getPipelineBossPoints(boss, spawnDate = null, tzOffset = 0, altServer = false) {
-  const cat = boss.category;
-  if (altServer) return getAltServerBossPoints(cat, spawnDate, tzOffset);
-  if (cat !== "ffa" && cat !== "red") return null;
-  return getBossPoints(spawnDate, tzOffset);
+// Same rule as the boss list cards: points come from the attendance settings (lib/attendancePoints.js),
+// so the pipeline shows the exact same points a boss would award there.
+function getPipelineBossPoints(boss, spawnDate = null, tzOffset = 0, pointsConfig = null) {
+  return resolveBossPoints(pointsConfig, boss.name, spawnDate, tzOffset);
 }
 
 function normalizePoints(rawPoints) {
@@ -77,7 +73,7 @@ function normalizePoints(rawPoints) {
  * chronologically-sorted list of timeline items, each with a resolved
  * `spawnDate` (Date) usable for chaining/countdowns.
  */
-export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", altServer = false) {
+export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMode = "NORMAL", pointsConfig = null) {
   const safeBosses = Array.isArray(bosses) ? bosses : [];
   const safeEvents = Array.isArray(events) ? events : [];
   const now = Date.now();
@@ -97,7 +93,7 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMo
         category: b.category,
         type: b.type,
         tag: tagForBoss(b),
-        points: normalizePoints(getPipelineBossPoints(b, spawnDate, tzOffset, altServer)),
+        points: normalizePoints(getPipelineBossPoints(b, spawnDate, tzOffset, pointsConfig)),
         spawnDate,
         raw: b,
       };
@@ -108,14 +104,15 @@ export function buildPipelineItems(bosses = [], events = [], tzOffset = 0, ffaMo
     .map((e) => {
       const place = resolveEventPlace(e, todayEventIndex);
       const spawnDate = computeEventSpawnDate(e.time.time, tzOffset);
+      const name = place ? `${e.name} - ${place}` : e.name;
       return {
         id: `event-${e.name}`,
         _type: "event",
-        name: place ? `${e.name} - ${place}` : e.name,
+        name,
         category: null,
         type: null,
         tag: "EVENT",
-        points: normalizePoints(e.time?.points ?? null),
+        points: normalizePoints(resolveEventPoints(pointsConfig, [name, e.name], todayEventIndex)),
         spawnDate,
         raw: e,
       };

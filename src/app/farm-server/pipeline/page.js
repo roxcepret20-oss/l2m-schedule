@@ -6,6 +6,7 @@ import PipelineContainer from "../../components/Pipeline/PipelineContainer";
 import Loader from "../../components/ClientSideLoader";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useSchedulePoints } from "@/lib/useSchedulePoints";
 import styles from "../../components/Pipeline/Pipeline.module.css";
 
 const TIMEZONES = [
@@ -23,6 +24,7 @@ export default function FarmServerPipelinePage() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
+  const pointsConfig = useSchedulePoints("/farm-server");
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
   const [tzKey, setTzKey] = useState(() => {
@@ -94,7 +96,7 @@ export default function FarmServerPipelinePage() {
         <h1>{t("Farm Server Pipelines")}</h1>
         <p>{t("Bosses & events grouped by spawn-time chains")}</p>
       </div>
-      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} altServer />
+      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} pointsConfig={pointsConfig} />
     </div>
   );
 }

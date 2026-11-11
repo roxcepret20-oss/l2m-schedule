@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./NokaBossCard.module.css";
 import bossVoice from "../../Helper/BossVoice";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../../../lib/featureFlags";
-import { getBossPoints, getAltServerBossPoints } from "../../../lib/bossPoints";
+import { resolveBossPoints } from "../../../lib/attendancePoints";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 function parseSpawnToDate(spawn) {
@@ -63,19 +63,13 @@ function getClanType(spawnDate, tzOffset = 0, category, name, ffaMode = "NORMAL"
   return CLAN_SECONDARY;
 }
 
-function getPointsInfo(boss, ffaMode = "NORMAL", spawnDate = null, tzOffset = 0, altServer = false) {
-  const cat = boss.category;
-
-  // Maluk never awards points.
-  if (boss.name === "Maluk") return null;
-
-  if (altServer) return { points: getAltServerBossPoints(cat, spawnDate, tzOffset), label: cat };
-  if (cat !== "ffa" && cat !== "red") return null;
-
-  return { points: getBossPoints(spawnDate, tzOffset), label: cat };
+// Points come from the attendance settings (see lib/attendancePoints.js); a boss that is not listed there has none.
+function getPointsInfo(boss, pointsConfig, spawnDate = null, tzOffset = 0) {
+  const points = resolveBossPoints(pointsConfig, boss.name, spawnDate, tzOffset);
+  return points == null ? null : { points, label: boss.category };
 }
 
-export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", altServer = false }) {
+export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", pointsConfig = null }) {
   const { t, bossName, units } = useLanguage();
   const spawnDateRef = useRef(parseSpawnToDate(boss.spawn_time));
   const [now, setNow] = useState(() => Date.now());
@@ -136,7 +130,7 @@ export default function NokaBossCard({ boss, tzOffset = 0, ffaMode = "NORMAL", a
     return "url('/noka_theme/Sentinel_bar.png')";
   }
 
-  const pointsInfo = getPointsInfo(boss, ffaMode, spawnDateRef.current, tzOffset, altServer);
+  const pointsInfo = getPointsInfo(boss, pointsConfig, spawnDateRef.current, tzOffset);
 
   return (
     <div 

@@ -7,6 +7,7 @@ import ThemeSelector from "./components/ThemeSelector";
 import Loader from "./components/ClientSideLoader";
 import LanguageSelect from "./components/LanguageSelect";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useSchedulePoints } from "@/lib/useSchedulePoints";
 import { MULTI_CLAN_MODE, CLAN_PRIMARY, CLAN_SECONDARY } from "../lib/featureFlags";
 
 const TIMEZONES = [
@@ -74,6 +75,7 @@ export default function Bosses() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [bosses, setBosses] = useState(null);
+  const pointsConfig = useSchedulePoints("/");
   const [events, setEvents] = useState(null);
   const [ffaDays, setFfaDays] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -209,6 +211,7 @@ export default function Bosses() {
         tzOffset={tzOffset}
         ffaMode={ffaMode}
         theme={theme}
+        pointsConfig={pointsConfig}
       />
     </div>
   );

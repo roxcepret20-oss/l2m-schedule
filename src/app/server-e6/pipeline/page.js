@@ -94,7 +94,7 @@ export default function ServerE6PipelinePage() {
         <h1>{t("ServerE6 Pipelines")}</h1>
         <p>{t("Bosses & events grouped by spawn-time chains")}</p>
       </div>
-      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} altServer />
+      <PipelineContainer bosses={bosses} events={events} tzOffset={tzOffset} ffaMode={ffaMode} view={view} />
     </div>
   );
 }

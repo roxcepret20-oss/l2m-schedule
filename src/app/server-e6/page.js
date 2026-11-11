@@ -193,7 +193,6 @@ export default function ServerE6Bosses() {
         events={events}
         tzOffset={tzOffset}
         ffaMode={ffaMode}
-        altServer
       />
     </div>
   );
