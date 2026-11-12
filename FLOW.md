@@ -64,6 +64,7 @@ OAUTH     "Login with Discord" button (DiscordOAuthButton, hidden unless GET /ap
           identity saved in sessionStorage → /users/register skips DiscordVerify) ; intent "link" → …/oauth/link-account {link_token}
           register page also has "Register with Discord" (same callback, auto-continues to the form)
 RESET     reset-password/request → DM code → reset-password {code, new_password}
+          (no Discord linked: superadmin sets it on web /attendance/settings/users → "Set password" → PUT /api/users/:id/password)
 AFTER     profile (own stats/gear), /users/attendance/[id] (read-only sanitized sheet incl. PVP + income), /leaderboard
 ```
 Every member page has a way back to the schedule (`← Schedule`, `MemberMenu` → the member's clan `boss_schedule_path`, cached in `localStorage.user_boss_schedule_path`, fallback `/`; set per clan on `/attendance/clans`).

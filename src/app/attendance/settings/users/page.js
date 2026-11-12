@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import styles from "../gear_score_formula/gear_score_formula.module.css";
+import ui from "../../components/attendance-ui.module.css";
+import { Modal } from "../../components/Modal";
+import { apiFetch } from "@/lib/attendanceApi";
+import { useAdminProfile } from "@/lib/adminProfile";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -23,6 +27,41 @@ export default function UsersSettingsPage() {
   const [unlinkId, setUnlinkId] = useState(null);
   const [discordStatus, setDiscordStatus] = useState({});
   const [discordChecking, setDiscordChecking] = useState(false);
+
+  const profile = useAdminProfile();
+  const isSuperAdmin = profile?.role === "superadmin";
+  const [pwUser, setPwUser] = useState(null);
+  const [pwValue, setPwValue] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwDone, setPwDone] = useState("");
+
+  function openSetPassword(user) {
+    setPwUser(user);
+    setPwValue("");
+    setPwError("");
+    setPwDone("");
+  }
+
+  async function submitSetPassword(e) {
+    e.preventDefault();
+    if (!pwValue.trim()) {
+      setPwError("Enter a new password.");
+      return;
+    }
+    setPwBusy(true);
+    setPwError("");
+    try {
+      await apiFetch(`/api/users/${pwUser.id}/password`, { method: "PUT", body: { new_password: pwValue } });
+      setPwDone(`Password updated for ${pwUser.real_ign}. Share the new password with the member privately.`);
+      setPwUser(null);
+      setPwValue("");
+    } catch (err) {
+      setPwError(err.message || "Failed to set password.");
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   async function checkDiscord() {
     setDiscordChecking(true);
@@ -143,6 +182,7 @@ export default function UsersSettingsPage() {
           </button>
         </p>
         {error && <p className={styles.errorText}>{error}</p>}
+        {pwDone && <p className={styles.muted}>{pwDone}</p>}
         {loading ? (
           <p className={styles.muted}>Loading…</p>
         ) : users.length === 0 ? (
@@ -193,6 +233,11 @@ export default function UsersSettingsPage() {
                       ) : (
                         <span className={styles.muted}>Inactive</span>
                       )}
+                      {isSuperAdmin && user.status === "active" && (
+                        <button className={styles.btnEdit} onClick={() => openSetPassword(user)}>
+                          Set password
+                        </button>
+                      )}
                       {user.discord_user_id && (
                         <button
                           className={styles.btnEdit}
@@ -210,6 +255,44 @@ export default function UsersSettingsPage() {
           </table>
         )}
       </div>
+
+      {pwUser && (
+        <Modal
+          title={`Set password for ${pwUser.real_ign}`}
+          onClose={() => !pwBusy && setPwUser(null)}
+          persistent
+          footer={
+            <>
+              <button type="button" className={ui.btnGhost} onClick={() => setPwUser(null)} disabled={pwBusy}>
+                Cancel
+              </button>
+              <button type="submit" form="set-password-form" className={ui.btnPrimary} disabled={pwBusy}>
+                {pwBusy ? "Saving…" : "Set password"}
+              </button>
+            </>
+          }
+        >
+          <form id="set-password-form" onSubmit={submitSetPassword}>
+            <p className={ui.muted} style={{ marginBottom: 12 }}>
+              Replaces the member&apos;s current password. Use this when they forgot it and have no linked Discord.
+            </p>
+            <div className={ui.field}>
+              <label className={ui.label} htmlFor="set-password-input">New password</label>
+              <input
+                id="set-password-input"
+                type="text"
+                className={ui.input}
+                value={pwValue}
+                onChange={(e) => setPwValue(e.target.value)}
+                autoComplete="off"
+                maxLength={72}
+                autoFocus
+              />
+            </div>
+            {pwError && <p className={ui.errorText}>{pwError}</p>}
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
