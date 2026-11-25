@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/attendanceApi";
 import { colorForAdmin } from "@/lib/adminColors";
 import { DAY_SHORT } from "@/lib/weeks";
+import { ConfirmModal } from "../../components/Modal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./logs-view.module.css";
 
@@ -35,7 +36,19 @@ function summarize(group) {
   return `${verb} ${group.rows.length} cells (${members.size} members × ${entries.size} entries)`;
 }
 
-export default function LogsView({ attendanceId, admins }) {
+const activityKey = (log) => `${log.batch_id}:${log.action}`;
+
+function revertMessage({ rows, action }) {
+  const effect = action === "tick" ? "unticked" : "ticked again";
+  if (rows.length === 1) {
+    const [log] = rows;
+    return `${log.member_ign ?? "This member"} on ${entryLabel(log)} will be ${effect}.`;
+  }
+  return `${summarize({ rows, action })}. The whole activity is reverted (those cells are ${effect}), including rows hidden by the filters or not loaded yet. Cells changed since then are skipped.`;
+}
+
+// onRevert({ log_id } | { batch_id, action }) resolves with { reverted, skipped }; omitted when read-only.
+export default function LogsView({ attendanceId, admins, currentAdminId, onRevert }) {
   const [logs, setLogs] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,6 +57,9 @@ export default function LogsView({ attendanceId, admins }) {
   const [adminFilter, setAdminFilter] = useState("");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(() => new Set());
+  const [pending, setPending] = useState(null); // the line waiting for confirmation: { rows, action }
+  const [reverting, setReverting] = useState(false);
+  const [outcome, setOutcome] = useState("");
 
   const adminById = useMemo(() => new Map(admins.map((a) => [a.id, a])), [admins]);
 
@@ -99,6 +115,52 @@ export default function LogsView({ attendanceId, admins }) {
       return next;
     });
 
+  // Grouped lines with something left to revert, judged on every loaded row (not only the filtered ones).
+  const revertibleActivities = useMemo(() => new Set(logs.filter((l) => l.revertible).map(activityKey)), [logs]);
+
+  async function confirmRevert() {
+    const { rows, action } = pending;
+    const body = rows.length === 1 ? { log_id: rows[0].id } : { batch_id: rows[0].batch_id, action };
+    setReverting(true);
+    setOutcome("");
+    setError("");
+    try {
+      const { reverted, skipped } = await onRevert(body);
+      await load();
+      setOutcome(
+        `Reverted ${reverted} ${reverted === 1 ? "cell" : "cells"}.` +
+          (skipped ? ` Skipped ${skipped} that changed since then or no longer exist.` : "")
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setReverting(false);
+      setPending(null);
+    }
+  }
+
+  // Only the admin's own activity gets a button. `revertible` is missing when the API is older than this page.
+  const revertCell = (rows, action, enabled) => {
+    const [first] = rows;
+    if (!onRevert || first.admin_id !== currentAdminId || first.revertible === undefined) return <td />;
+    return (
+      <td className={styles.undo}>
+        <button
+          type="button"
+          className={`${ui.btnGhost} ${ui.btnSm}`}
+          disabled={!enabled || reverting}
+          title={enabled ? "Undo this activity" : "Nothing left to revert: changed since then or already reverted"}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPending({ rows, action });
+          }}
+        >
+          ↶ Revert
+        </button>
+      </td>
+    );
+  };
+
   const adminCell = (log) => {
     const admin = adminById.get(log.admin_id);
     return (
@@ -131,6 +193,7 @@ export default function LogsView({ attendanceId, admins }) {
       </div>
 
       {error && <div className={ui.banner}><span>{error}</span></div>}
+      {outcome && <p className={styles.outcome} role="status">{outcome}</p>}
 
       {loading ? (
         <p className={ui.muted}>Loading…</p>
@@ -148,6 +211,7 @@ export default function LogsView({ attendanceId, admins }) {
                 <th>Action</th>
                 <th>Boss / event</th>
                 <th>Member</th>
+                <th aria-label="Revert" />
               </tr>
             </thead>
             <tbody>
@@ -161,6 +225,7 @@ export default function LogsView({ attendanceId, admins }) {
                       <td>{actionCell(first.action)}</td>
                       <td>{entryLabel(first)} <span className={styles.sub}>{entryWhen(first)}</span></td>
                       <td>{first.member_ign ?? "(deleted member)"}</td>
+                      {revertCell(group.rows, group.action, first.revertible)}
                     </tr>
                   );
                 }
@@ -174,6 +239,7 @@ export default function LogsView({ attendanceId, admins }) {
                       <td colSpan={2}>
                         <b>{open ? "▾" : "▸"} {summarize(group)}</b>
                       </td>
+                      {revertCell(group.rows, group.action, revertibleActivities.has(activityKey(first)))}
                     </tr>
                     {open &&
                       group.rows.map((log) => (
@@ -183,6 +249,7 @@ export default function LogsView({ attendanceId, admins }) {
                           <td />
                           <td>{entryLabel(log)} <span className={styles.sub}>{entryWhen(log)}</span></td>
                           <td>{log.member_ign ?? "(deleted member)"}</td>
+                          {revertCell([log], log.action, log.revertible)}
                         </tr>
                       ))}
                   </Fragment>
@@ -201,7 +268,19 @@ export default function LogsView({ attendanceId, admins }) {
 
       <p className={ui.hint}>
         Newest first. Only ticks and unticks made after this feature was added are logged; click a grouped line to see every cell it changed.
+        {" "}↶ Revert undoes your own activity (a grouped line, or one cell inside it); cells changed since then are left alone.
       </p>
+
+      {pending && (
+        <ConfirmModal
+          title={`Revert this ${pending.action}?`}
+          message={revertMessage(pending)}
+          confirmLabel="Revert"
+          busy={reverting}
+          onConfirm={confirmRevert}
+          onClose={() => setPending(null)}
+        />
+      )}
     </>
   );
 }

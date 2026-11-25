@@ -70,6 +70,17 @@
   background: color-mix(in srgb, var(--muted) 6%, transparent);
 }
 
+.undo {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.outcome {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
 .more {
   display: flex;
   justify-content: center;

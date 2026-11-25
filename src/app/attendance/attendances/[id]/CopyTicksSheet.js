@@ -5,7 +5,7 @@ import { Modal } from "../../components/Modal";
 import ui from "../../components/attendance-ui.module.css";
 import styles from "./attendance-detail.module.css";
 
-// Bottom sheet: copy the ticked members of `source` onto the other bosses of its time group.
+// Bottom sheet: copy the ticked members of `source` (boss or event) onto the bosses of its time group.
 // Only adds ticks; existing ticks on the targets are kept. Admins can uncheck bosses they do not want.
 export default function CopyTicksSheet({ source, targets, gapMinutes, onConfirm, onClose }) {
   const [selected, setSelected] = useState(() => new Set(targets.map((t) => t.id)));
@@ -38,7 +38,10 @@ export default function CopyTicksSheet({ source, targets, gapMinutes, onConfirm,
         {count === 0
           ? `${source.name} has no ticks to copy yet.`
           : `${count} ticked ${count === 1 ? "member" : "members"} from ${source.name} (${source.time}) will be ticked on the bosses you leave checked. Existing ticks are kept.`}
-        {" "}Bosses are grouped when their times are within {gapMinutes} min of each other.
+        {" "}
+        {source.kind === "event"
+          ? `Bosses within ${gapMinutes} min of the event are listed, plus bosses chained to those by the same gap.`
+          : `Bosses are grouped when their times are within ${gapMinutes} min of each other.`}
       </p>
       <ul className={styles.copyList}>
         {targets.map((t) => (

@@ -386,6 +386,31 @@
   cursor: default;
 }
 
+/* Ticked by another admin. */
+.cellLocked,
+.cellLocked:hover {
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* Floating message, visible wherever the table is scrolled. */
+.notice {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  pointer-events: none;
+}
+
 .dayPts {
   font-weight: 700;
   min-width: 74px;

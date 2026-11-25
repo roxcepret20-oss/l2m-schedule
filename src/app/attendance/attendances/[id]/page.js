@@ -55,12 +55,20 @@ export default function AttendanceDetailPage() {
   const dragRef = useRef(null);
   const queueRef = useRef(Promise.resolve());
   const pointerTypeRef = useRef("mouse");
-  // Only used to color optimistic ticks; the server records who really ticked.
+  // Colors optimistic ticks and locks other admins' ticks; the server records and enforces who really ticked.
   const [currentAdmin] = useState(() => getCurrentAdmin());
+  // Short message shown when another admin's tick was left in place.
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     sheetRef.current = sheet;
   }, [sheet]);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   const load = useCallback(
     async ({ silent = false } = {}) => {
@@ -135,6 +143,20 @@ export default function AttendanceDetailPage() {
     return null;
   };
 
+  // A tick made by another admin cannot be removed by this one (ticks without an owner are free).
+  const isForeignTicker = (adminId) => adminId != null && adminId !== currentAdmin?.id;
+
+  // Tells the admin that these { entryId, memberId } ticks stay because other admins own them.
+  const noticeKept = (cells) => {
+    if (cells.length === 0) return;
+    const names = [...new Set(cells.map((c) => adminById.get(tickerOf(c.entryId, c.memberId))?.name ?? "another admin"))].join(", ");
+    setNotice(
+      cells.length === 1
+        ? `Ticked by ${names}: only they can untick it.`
+        : `Kept ${cells.length} ticks by ${names}: only they can untick them.`
+    );
+  };
+
   // A change may carry `by` (the admin id to show as the ticker); unticks drop the ticker.
   const applyChanges = useCallback((changes) => {
     setSheet((prev) => {
@@ -186,24 +208,38 @@ export default function AttendanceDetailPage() {
     queueRef.current = queueRef.current.then(task);
   }, []);
 
+  // `foreign` from the API = cells another admin owns (this page was stale): show them as they really are.
+  const applyForeign = useCallback(
+    (foreign = []) => {
+      if (foreign.length === 0) return;
+      applyChanges(foreign.map((f) => ({ entry_id: f.entry_id, member_id: f.member_id, checked: true, by: f.ticked_by })));
+    },
+    [applyChanges]
+  );
+
   const sendChanges = useCallback(
     (changes, inverse) => {
       enqueue(async () => {
         try {
           const payload = changes.map(({ entry_id, member_id, checked }) => ({ entry_id, member_id, checked }));
-          await apiFetch(`/api/attendances/${attendanceId}/hits`, { method: "PATCH", body: { changes: payload } });
+          const result = await apiFetch(`/api/attendances/${attendanceId}/hits`, { method: "PATCH", body: { changes: payload } });
+          applyForeign(result.foreign);
         } catch (err) {
           applyChanges(inverse);
           setActionError(err.message);
         }
       });
     },
-    [attendanceId, applyChanges, enqueue]
+    [attendanceId, applyChanges, applyForeign, enqueue]
   );
 
   // Applies ticks locally right away and syncs them; reverts only these ticks if the server rejects them.
+  // Unticking skips other admins' ticks.
   const tickCells = (cells, value) => {
-    const effective = cells.filter((c) => isChecked(c.entryId, c.memberId) !== value);
+    const wanted = cells.filter((c) => isChecked(c.entryId, c.memberId) !== value);
+    const kept = value ? [] : wanted.filter((c) => isForeignTicker(tickerOf(c.entryId, c.memberId)));
+    const effective = wanted.filter((c) => !kept.includes(c));
+    noticeKept(kept);
     if (effective.length === 0) return;
     const by = currentAdmin?.id;
     applyChanges(effective.map((c) => ({ entry_id: c.entryId, member_id: c.memberId, checked: value, by })));
@@ -217,17 +253,22 @@ export default function AttendanceDetailPage() {
     const previous = (sheetRef.current?.days ?? []).flatMap((d) => d.entries).find((e) => e.id === entryId);
     const previousIds = previous?.member_ids ?? [];
     const previousBy = previous?.ticked_by ?? {};
+    // Ticks by other admins always stay.
+    const kept = previousIds.filter((m) => !memberIds.includes(m) && isForeignTicker(previousBy[m]));
+    const nextIds = [...memberIds, ...kept];
     // Members who stay ticked keep their original ticker; newly ticked ones belong to the current admin.
     const nextBy = Object.fromEntries(
-      memberIds.map((m) => [m, previousBy[m] ?? currentAdmin?.id]).filter(([, admin]) => admin != null)
+      nextIds.map((m) => [m, previousBy[m] ?? currentAdmin?.id]).filter(([, admin]) => admin != null)
     );
-    replaceEntry(entryId, { member_ids: memberIds, ticked_by: nextBy });
+    noticeKept(kept.map((memberId) => ({ entryId, memberId })));
+    replaceEntry(entryId, { member_ids: nextIds, ticked_by: nextBy });
     enqueue(async () => {
       try {
-        await apiFetch(`/api/attendances/${attendanceId}/entries/${entryId}/hits`, {
+        const result = await apiFetch(`/api/attendances/${attendanceId}/entries/${entryId}/hits`, {
           method: "PUT",
           body: { member_ids: memberIds },
         });
+        applyForeign(result.foreign);
       } catch (err) {
         replaceEntry(entryId, { member_ids: previousIds, ticked_by: previousBy });
         setActionError(err.message);
@@ -246,6 +287,10 @@ export default function AttendanceDetailPage() {
     const drag = dragRef.current;
     const key = `${cell.entryId}:${cell.memberId}`;
     if (!drag || drag.touched.has(key)) return;
+    if (!drag.value && isForeignTicker(tickerOf(cell.entryId, cell.memberId))) {
+      noticeKept([cell]);
+      return;
+    }
     drag.touched.set(key, { ...cell, prev: isChecked(cell.entryId, cell.memberId), prevBy: tickerOf(cell.entryId, cell.memberId) });
     applyChanges([{ entry_id: cell.entryId, member_id: cell.memberId, checked: drag.value, by: currentAdmin?.id }]);
   };
@@ -325,7 +370,8 @@ export default function AttendanceDetailPage() {
     return sheet ? sheet.members.filter((m) => !q || m.ign.toLowerCase().includes(q)) : [];
   }, [sheet, search]);
 
-  // Row ticks cover the bosses only; events are ticked individually.
+  // Row ticks cover the bosses only; events are ticked individually. Empty cells get ticked first; once every
+  // boss is ticked the click unticks this admin's own ticks (tickCells keeps the others).
   const toggleRow = (memberId) => {
     const bosses = dayEntries.filter((e) => e.kind !== "event");
     if (bosses.length === 0) return;
@@ -402,6 +448,14 @@ export default function AttendanceDetailPage() {
       setBusy(false);
       setModal(null);
     }
+  }
+
+  // Body is { log_id } or { batch_id, action }. Throws so the Logs tab can show the error.
+  async function revertActivity(body) {
+    await queueRef.current;
+    const result = await apiFetch(`/api/attendances/${attendanceId}/logs/revert`, { method: "POST", body });
+    await load({ silent: true });
+    return result;
   }
 
   const activeSalary = typeof tab === "string" ? sheet?.salaries.find((s) => `salary-${s.id}` === tab) : null;
@@ -553,7 +607,12 @@ export default function AttendanceDetailPage() {
       </div>
 
       {tab === LOGS_TAB ? (
-        <LogsView attendanceId={attendanceId} admins={sheet.admins ?? []} />
+        <LogsView
+          attendanceId={attendanceId}
+          admins={sheet.admins ?? []}
+          currentAdminId={currentAdmin?.id}
+          onRevert={readOnly ? undefined : revertActivity}
+        />
       ) : tab === CHECK_SS_TAB ? (
         <CheckSsView
           attendanceId={attendanceId}
@@ -627,41 +686,47 @@ export default function AttendanceDetailPage() {
                 <thead>
                   <tr>
                     <th className={styles.corner}>Member · week pts · grade</th>
-                    {dayEntries.map((entry, i) => (
-                      <th key={entry.id} title={entry.server === "invasion" ? "Invasion server" : undefined} className={`${styles.colHead} ${entry.kind === "event" ? styles.colHeadEvent : ""} ${entry.server === "invasion" ? styles.colHeadInvasion : ""}`}>
-                        {readOnly ? (
-                          <div className={styles.colName}>{entry.kind === "event" ? "★ " : ""}{entry.name}</div>
-                        ) : (
-                          <button type="button" className={`${styles.colName} ${styles.colNameBtn}`} title="Import participants from screenshots" onClick={() => setModal({ type: "participants", entryId: entry.id })}>
-                            {entry.kind === "event" ? "★ " : ""}{entry.name}
-                          </button>
-                        )}
-                        <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
-                        <div className={styles.colCountRow}>
-                          <span className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</span>
-                          {!readOnly && copyGroups.has(entry.id) && (
-                            <button
-                              type="button"
-                              className={styles.copyGroupBtn}
-                              title="Copy these ticks to bosses at the same time"
-                              aria-label={`Copy ticks of ${entry.name} to bosses at the same time`}
-                              onClick={() => setModal({ type: "copyGroup", entryId: entry.id })}
-                            >
-                              ⧉ {copyGroups.get(entry.id).length - 1}
+                    {dayEntries.map((entry, i) => {
+                      // Other admins with ticks in this column; while there are any, it cannot be removed.
+                      const owners = [...new Set(entry.member_ids.map((m) => entry.ticked_by?.[m]).filter(isForeignTicker))]
+                        .map((adminId) => adminById.get(adminId)?.name ?? "another admin")
+                        .join(", ");
+                      return (
+                        <th key={entry.id} title={entry.server === "invasion" ? "Invasion server" : undefined} className={`${styles.colHead} ${entry.kind === "event" ? styles.colHeadEvent : ""} ${entry.server === "invasion" ? styles.colHeadInvasion : ""}`}>
+                          {readOnly ? (
+                            <div className={styles.colName}>{entry.kind === "event" ? "★ " : ""}{entry.name}</div>
+                          ) : (
+                            <button type="button" className={`${styles.colName} ${styles.colNameBtn}`} title="Import participants from screenshots" onClick={() => setModal({ type: "participants", entryId: entry.id })}>
+                              {entry.kind === "event" ? "★ " : ""}{entry.name}
                             </button>
                           )}
-                        </div>
-                        {!readOnly && (
-                          <div className={styles.colButtons}>
-                            <button className={styles.iconBtn} title="Import participants from screenshots" aria-label={`Import participants for ${entry.name}`} onClick={() => setModal({ type: "participants", entryId: entry.id })}>📷</button>
-                            <button className={styles.iconBtn} title="Tick / untick everyone" aria-label={`Tick or untick everyone for ${entry.name}`} onClick={() => toggleColumn(entry)}>☑</button>
-                            <button className={styles.iconBtn} title="Copy ticks from the previous column" aria-label={`Copy ticks to ${entry.name} from previous column`} disabled={i === 0} onClick={() => copyPrevious(i)}>⧉</button>
-                            <button className={styles.iconBtn} title="Edit time / points" aria-label={`Edit ${entry.name}`} onClick={() => setModal({ type: "edit", entry })}>✎</button>
-                            <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} title="Remove column" aria-label={`Remove ${entry.name}`} onClick={() => setModal({ type: "remove", entry })}>✕</button>
+                          <div className={styles.colMeta}>{entry.time} · {entry.points}p</div>
+                          <div className={styles.colCountRow}>
+                            <span className={styles.colCount}>{entry.member_ids.length}/{sheet.members.length}</span>
+                            {!readOnly && copyGroups.has(entry.id) && (
+                              <button
+                                type="button"
+                                className={styles.copyGroupBtn}
+                                title={entry.kind === "event" ? "Copy these ticks to bosses around this event's time" : "Copy these ticks to bosses at the same time"}
+                                aria-label={`Copy ticks of ${entry.name} to bosses at the same time`}
+                                onClick={() => setModal({ type: "copyGroup", entryId: entry.id })}
+                              >
+                                ⧉ {copyGroups.get(entry.id).length - 1}
+                              </button>
+                            )}
                           </div>
-                        )}
-                      </th>
-                    ))}
+                          {!readOnly && (
+                            <div className={styles.colButtons}>
+                              <button className={styles.iconBtn} title="Import participants from screenshots" aria-label={`Import participants for ${entry.name}`} onClick={() => setModal({ type: "participants", entryId: entry.id })}>📷</button>
+                              <button className={styles.iconBtn} title="Tick / untick everyone" aria-label={`Tick or untick everyone for ${entry.name}`} onClick={() => toggleColumn(entry)}>☑</button>
+                              <button className={styles.iconBtn} title="Copy ticks from the previous column" aria-label={`Copy ticks to ${entry.name} from previous column`} disabled={i === 0} onClick={() => copyPrevious(i)}>⧉</button>
+                              <button className={styles.iconBtn} title="Edit time / points" aria-label={`Edit ${entry.name}`} onClick={() => setModal({ type: "edit", entry })}>✎</button>
+                              <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} title={owners ? `Cannot remove: has ticks by ${owners}` : "Remove column"} aria-label={`Remove ${entry.name}`} disabled={Boolean(owners)} onClick={() => setModal({ type: "remove", entry })}>✕</button>
+                            </div>
+                          )}
+                        </th>
+                      );
+                    })}
                     <th className={styles.dayPtsHead} title="PVP points (kills + assists) of this day">PVP</th>
                     <th className={styles.dayPtsHead}>Day pts</th>
                   </tr>
@@ -686,6 +751,7 @@ export default function AttendanceDetailPage() {
                           const on = entry.member_ids.includes(member.id);
                           const ticker = on ? adminById.get(entry.ticked_by?.[member.id]) : null;
                           const tickColor = ticker ? colorForAdmin(ticker) : null;
+                          const locked = on && !readOnly && isForeignTicker(entry.ticked_by?.[member.id]);
                           return (
                             <td
                               key={entry.id}
@@ -697,11 +763,11 @@ export default function AttendanceDetailPage() {
                               role="checkbox"
                               aria-checked={on}
                               aria-label={`${member.ign} – ${entry.name}`}
-                              title={ticker ? `Ticked by ${ticker.name}` : undefined}
+                              title={ticker ? `Ticked by ${ticker.name}${locked ? " (only they can untick it)" : ""}` : undefined}
                               tabIndex={focusRow === r && focusCol === c ? 0 : -1}
                               onFocus={() => setActiveCell({ r, c })}
                               style={tickColor ? { background: tickColor, color: readableTextColor(tickColor) } : undefined}
-                              className={`${styles.cell} ${entry.server === "invasion" ? styles.cellInvasion : ""} ${on ? styles.cellOn : ""} ${tickColor ? styles.cellOnAdmin : ""} ${readOnly ? styles.cellReadOnly : ""}`}
+                              className={`${styles.cell} ${entry.server === "invasion" ? styles.cellInvasion : ""} ${on ? styles.cellOn : ""} ${tickColor ? styles.cellOnAdmin : ""} ${readOnly ? styles.cellReadOnly : ""} ${locked ? styles.cellLocked : ""}`}
                             >
                               {on ? "✓" : ""}
                             </td>
@@ -732,10 +798,12 @@ export default function AttendanceDetailPage() {
           )}
 
           <p className={ui.hint}>
-            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick all bosses in the row for this day (events are not included) · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · the <b>⧉ N</b> button beside the count copies the column&apos;s ticks to the other N bosses at the same time (a bottom sheet lets you uncheck bosses first) · ★ = event · arrow keys + Space also work.
+            <b>Click &amp; drag</b> across cells to tick/untick many at once (touch: tap) · click a <b>member name</b> to tick all bosses in the row for this day (events are not included) · column buttons: ☑ everyone, ⧉ copy ticks from the previous column, ✎ edit, ✕ remove · the <b>⧉ N</b> button beside the count copies the column&apos;s ticks to N bosses at the same time, on boss and event columns (a bottom sheet lets you uncheck bosses first) · you can only untick your own ticks, and a column with another admin&apos;s ticks cannot be removed · ★ = event · arrow keys + Space also work.
           </p>
         </>
       )}
+
+      {notice && <div className={styles.notice} role="status">{notice}</div>}
 
       {modal?.type === "start" && (
         <ConfirmModal title="Start this attendance?" message="The status changes to Running. You can keep editing entries and ticks." confirmLabel="Start" busy={busy} onConfirm={() => runStatusAction("start")} onClose={() => setModal(null)} />
